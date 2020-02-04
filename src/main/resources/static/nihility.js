@@ -59,7 +59,7 @@
         styleElement.rel = "stylesheet";
         styleElement.innerHTML = `
             #container .pt10.clearfix, #topbar, #header, #nav, #right-share, #footer,
-            .xgcomm.clearfix, .main-right, .lbd.clearfix, .normal_li ~ *, #con_all,
+            .xgcomm.clearfix, .main-right, .lbd.clearfix, .normal_li ~ *, #con_all, #mtab .tabNav,
             #container .tonglan, #container #param-content ~ *, #container .softsfwtl,
             #download .address-wrap ~ *, #xgw1, #down4, #gaosu, .gs, #container .tip ~ * {
                 display: none !important;
@@ -75,6 +75,25 @@
             }
             .search {
                 margin: 5px auto !important;
+            }
+            #content {
+                display: flex !important;
+                flex-direction: column !important;
+            }
+            #mtab {
+                height: auto !important;
+            }
+            #soft-info {
+                order: 0 !important;
+            }
+            #download {
+                order: -1 !important;
+            }
+            #sm {
+                order: 1 !important;
+            }
+            #recomc {
+                order: 2 !important;
             }
         `;
         $("head").appendChild(styleElement);
@@ -119,6 +138,91 @@
         `;
         $("head").appendChild(styleElement);
         console.log("[Initial 7down lite script]");
+    };
+    pureAction["http.?://blog[.]csdn[.]net/.*/article/details/.*"] = function () {
+        const styleElement = document.createElement("style");
+        styleElement.rel = "stylesheet";
+        styleElement.innerHTML = `
+            .app-control.app-app, .vip-caise, .to-commentBox.to-reward, .blog_container_aside,
+            .btn-readmore, .hide-article-box, .t0, .csdn-side-toolbar, .recommend-box, 
+            .blog-content-box + script + div {
+                display: none !important;
+            }
+            #mainBox main {
+                width: 100% !important;
+            }
+            .tool-box {
+                right: 0 !important;
+            }
+            #article_content {
+                height: auto !important;
+            }
+            .leftPop {
+                z-index: 2000 !important;
+            }
+        `;
+        $("head").appendChild(styleElement);
+        console.log("[Initial csdn lite script]");
+    };
+    pureAction["http.?://www[.]jianshu[.]com/p/.*"] = function () {
+        const styleElement = document.createElement("style");
+        styleElement.rel = "stylesheet";
+        styleElement.innerHTML = `
+            [aria-label=baidu-ad], #note-page-comment ~ section, nav a[href='/'], nav a[href*='/app'],
+            [aria-label=ic-nav-mode], [aria-label=简书钻], aside, [aria-label=添加评论], [aria-label=添加评论] ~ div {
+                display: none !important;
+            }
+            header + div > div > div:nth-child(1) {
+                width: 100% !important;
+            }
+            footer textarea {
+                width: 850px !important;
+            }
+        `;
+        $("head").appendChild(styleElement);
+        $("body").className = "reader-night-mode";
+        console.log("[Initial jianshu lite script]");
+    };
+    pureAction["http.?://www[.]cnblogs[.]com/.*/p/.*[.]html"] = function () {
+        const styleElement = document.createElement("style");
+        styleElement.rel = "stylesheet";
+        styleElement.innerHTML = `
+            #sideBar, #div_digg, #ad_text_under_commentbox ~ *, #green_channel, #main ~ * {
+                display: none !important;
+            }
+            #mainContent {
+                width: 100% !important;
+            }
+            #author_profile_info {
+                display: inline-block !important;
+                margin: 10px !important;
+            }
+            #author_profile_info ~ .clear {
+                display: inline-block !important;
+            }
+            #main {
+                position: inherit !important;
+                width: 1080px !important;
+            }
+            #main, #mainContent .forFlow {
+                margin: 0 auto !important;
+            }
+        `;
+        $("head").appendChild(styleElement);
+        $("body").className = "reader-night-mode";
+        console.log("[Initial cnblogs lite script]");
+    };
+    pureAction["http.?://(.*[.])?segmentfault[.]com/a/.*"] = function () {
+        const styleElement = document.createElement("style");
+        styleElement.rel = "stylesheet";
+        styleElement.innerHTML = `
+            #sf-article > div > div:last-child, #comment-area ~ *, #footer {
+                display: none !important;
+            }
+        `;
+        $("head").appendChild(styleElement);
+        $("body").className = "reader-night-mode";
+        console.log("[Initial segmentfault lite script]");
     };
     pureAction["http.?://www[.]pc6[.]com/softview/SoftView_.*[.]html"] = function () {
         const styleElement = document.createElement("style");
