@@ -280,7 +280,7 @@
             .PrivilegeGiftModalDialog, #js-room-activity, #js-aside, .layout-Player-aside,
             #js-bottom, [class*='recommendAD'], [class*='recommendApp'], .Title-anchorInfo,
             .Title-impress, .Title-roomOtherBottom, .layout-Banner, .layout-Module.Recommend-wrapper,
-            .ScrollTabFrame-wrapper:after {
+            .ScrollTabFrame-wrapper:after, .PcDiversion {
                 display: none !important;
             }
             .Title {
