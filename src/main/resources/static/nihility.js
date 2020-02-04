@@ -54,7 +54,7 @@
     let taskQueue = [];
 
     const pureAction = {};
-    pureAction["http.://www[.]jb51[.]net/.*[.]html"] = function () {
+    pureAction["http.?://www[.]jb51[.]net/.*[.]html"] = function () {
         const styleElement = document.createElement("style");
         styleElement.rel = "stylesheet";
         styleElement.innerHTML = `
@@ -80,7 +80,80 @@
         $("head").appendChild(styleElement);
         console.log("[Initial jb51 lite script]");
     };
-    pureAction["http.://www[.]douyu[.]com/.+"] = function () {
+    pureAction["http.?://www[.]7down[.]com/soft/.*[.]html"] = function () {
+        const styleElement = document.createElement("style");
+        styleElement.rel = "stylesheet";
+        styleElement.innerHTML = `
+            .top, .header div p, .nav, .subnav, #btndowns, .down_right, .soft-left,
+            #downloads, #specialbox, .game02, .game04, #downlist > *, #downloadbox,
+            .tit04, .soft-body .head, a.xza {
+                display: none !important;
+            }
+            #downlist > .off ~ dd {
+                display: block !important;
+            }
+            .soft-body {
+                width: auto !important;
+            }
+            .down_left {
+                float: right !important;
+            }
+            .down-info {
+                height: auto !important;
+            }
+            .downlist {
+                position: absolute;
+                top: 200px;
+                left: 100px;
+            }
+            .downbox {
+                width: 0 !important;
+                height: 0 !important;
+            }
+            #downloadbox {
+                left: auto !important;
+                right: 0 !important;
+                bottom: auto !important;
+                top: 20px !important;
+            }
+        `;
+        $("head").appendChild(styleElement);
+        console.log("[Initial 7down lite script]");
+    };
+    pureAction["http.?://www[.]pc6[.]com/softview/SoftView_.*[.]html"] = function () {
+        const styleElement = document.createElement("style");
+        styleElement.rel = "stylesheet";
+        styleElement.innerHTML = `
+            #topNavC, .bdcs-hot, #header dd, #bdfx, #sidebar, #xzbtn .downnow, #mtab,
+            .ad-download, .address-wrap h2, .address-wrap h3, .address-wrap #gaosuxiazai,
+            #xgd, #xgw, #reci, #xgk, .sendErr-wrap {
+                display: none !important;
+            }
+            #content {
+                width: auto !important;
+            }
+            .address-wrap, #param-box, #param {
+                height: auto !important;
+            }
+            #autotab {
+                top: 100px;
+                right: 40px;
+                left: auto;
+                background: white;
+                border: 1px solid #390;
+                padding: 10px;
+            }
+            #cmtMsg, #main, #param-box {
+                width: 100% !important;
+            }
+            ##param-content {
+                float: right !important;
+            }
+        `;
+        $("head").appendChild(styleElement);
+        console.log("[Initial pc6 lite script]");
+    };
+    pureAction["http.?://www[.]douyu[.]com/.+"] = function () {
 
         function doFullWebScreen() {
             const fullScreenSelector = '[title="网页全屏"]';
@@ -169,7 +242,7 @@
         setInterval(taskExecutor, 500);
         console.log("[Initial douyu lite script]");
     };
-    pureAction["http.://www[.]bilibili[.]com/video/av.*"] = function () {
+    pureAction["http.?://www[.]bilibili[.]com/video/av.*"] = function () {
 
         function doSpeedUp() {
             const selector = '.bilibili-player-video video';
@@ -205,7 +278,7 @@
             taskQueue.push({
                 maxRetry: 10,
                 initial: () => !$(selector),
-                finish:  () => !$(selector),
+                finish: () => !$(selector),
                 recursive: function () {
                     let countTime = 0;
                     const series = [1, 60, 60 * 60];
