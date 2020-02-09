@@ -396,6 +396,20 @@
             });
         }
 
+        function doAutoStartPlayNext() {
+            var video = $(".bilibili-player-video video");
+            video.addEventListener("ended", function (e) {
+                var paused = $('.video-state-pause');
+                var nextBtn = $('.bilibili-player-video-btn-next');
+
+                if (!paused || !nextBtn) {
+                    return;
+                }
+                doClick(nextBtn);
+                setTimeout(doAutoStartPlayNext, 2000);
+            })
+        }
+
         function doStart() {
             const control = $(".video-control-show");
             if (!control) {
@@ -406,6 +420,7 @@
             doFullWebScreen();
             doAutoStartPlay();
             doAutoStartPlayJump();
+            doAutoStartPlayNext();
             console.log("[Initial bilibili lite script]");
         }
 
