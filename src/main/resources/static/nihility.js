@@ -398,26 +398,31 @@
         }
 
         function doAutoStartPlayNext() {
+            addAutoPlayNextEvent();
             const targetNode = $("#bilibiliPlayer");
-
             const observer = new MutationObserver(function (mutations) {
-                const mutationRecord = mutations.find(mutation => mutation.type === "childList");
+                const mutationRecord = mutations.filter(mutation => mutation.type === "childList")
+                    .flatMap(mutation => Array.from(mutation.addedNodes))
+                    .find(target => target.tagName === "VIDEO");
                 if (!mutationRecord) {
                     return;
                 }
-                const video = $(".bilibili-player-video video");
-                video && video.addEventListener("ended", function (e) {
-                    const paused = $('.video-state-pause');
-                    const nextBtn = $('.bilibili-player-video-btn-next');
-
-                    if (!paused || !nextBtn) {
-                        return;
-                    }
-                    doClick(nextBtn);
-                })
+                addAutoPlayNextEvent();
             });
-
             observer.observe(targetNode, {attributes: false, childList: true, subtree: true});
+        }
+
+        function addAutoPlayNextEvent() {
+            const video = $(".bilibili-player-video video");
+            video && video.addEventListener("ended", function (e) {
+                const paused = $('.video-state-pause');
+                const nextBtn = $('.bilibili-player-video-btn-next');
+
+                if (!paused || !nextBtn) {
+                    return;
+                }
+                doClick(nextBtn);
+            });
         }
 
         function doStart() {
