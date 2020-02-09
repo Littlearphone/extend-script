@@ -14,6 +14,7 @@
 
 (function () {
     'use strict';
+    const MutationObserver = window.MutationObserver || window.WebKitMutationObserver || window.MozMutationObserver;
 
     function $(selector) {
         return document.querySelector(selector);
@@ -397,17 +398,26 @@
         }
 
         function doAutoStartPlayNext() {
-            var video = $(".bilibili-player-video video");
-            video.addEventListener("ended", function (e) {
-                var paused = $('.video-state-pause');
-                var nextBtn = $('.bilibili-player-video-btn-next');
+            const targetNode = $("#bilibiliPlayer");
 
-                if (!paused || !nextBtn) {
+            const observer = new MutationObserver(function (mutations) {
+                const mutationRecord = mutations.find(mutation => mutation.type === "childList");
+                if (!mutationRecord) {
                     return;
                 }
-                doClick(nextBtn);
-                setTimeout(doAutoStartPlayNext, 2000);
-            })
+                const video = $(".bilibili-player-video video");
+                video && video.addEventListener("ended", function (e) {
+                    const paused = $('.video-state-pause');
+                    const nextBtn = $('.bilibili-player-video-btn-next');
+
+                    if (!paused || !nextBtn) {
+                        return;
+                    }
+                    doClick(nextBtn);
+                })
+            });
+
+            observer.observe(targetNode, {attributes: false, childList: true, subtree: true});
         }
 
         function doStart() {
