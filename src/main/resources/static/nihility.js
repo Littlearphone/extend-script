@@ -55,13 +55,13 @@
     let taskQueue = [];
 
     const pureAction = {};
-    pureAction["http.?://www[.]jb51[.]net/.*[.]html"] = function () {
+    pureAction["http.?://www[.]jb51[.]net/(artical/)?.*[.]htm(l)?"] = function () {
         const styleElement = document.createElement("style");
         styleElement.rel = "stylesheet";
         styleElement.innerHTML = `
             #container .pt10.clearfix, #topbar, #header, #nav, #right-share, #footer,
             .xgcomm.clearfix, .main-right, .lbd.clearfix, .normal_li ~ *, #con_all, #mtab .tabNav,
-            #container .tonglan, #container #param-content ~ *, #container .softsfwtl,
+            #container .tonglan, #container #param-content ~ *, #container .softsfwtl, .art_xg,
             #download .address-wrap ~ *, #xgw1, #down4, #gaosu, .gs, #container .tip ~ * {
                 display: none !important;
             }
@@ -145,11 +145,12 @@
         styleElement.rel = "stylesheet";
         styleElement.innerHTML = `
             .app-control.app-app, .vip-caise, .to-commentBox.to-reward, .blog_container_aside,
-            .btn-readmore, .hide-article-box, .t0, .csdn-side-toolbar, .recommend-box, 
-            .blog-content-box + script + div {
+            .btn-readmore, .hide-article-box, .t0, .csdn-side-toolbar, .recommend-box, #addAdBox,
+            .blog-content-box + script + div, div.recommend-right, .bdsharebuttonbox,
+            .widescreen-hide, .widescreen-more, #sharePost {
                 display: none !important;
             }
-            #mainBox main {
+            .main_father .container#mainBox main {
                 width: 100% !important;
             }
             .tool-box {
@@ -183,6 +184,61 @@
         $("head").appendChild(styleElement);
         $("body").className = "reader-night-mode";
         console.log("[Initial jianshu lite script]");
+    };
+    pureAction["http.?://www[.]iteye[.]com/blog/.*"] = function () {
+        const styleElement = document.createElement("style");
+        styleElement.rel = "stylesheet";
+        styleElement.innerHTML = `
+            #blog_actions, #user_visits, #user_title_list, #blog_menu, #month_blogs, #guest_books,
+            .blog-sidebar, #blog_content ~ div, .hide-article-box, #blog_content #bottoms {
+                display: none !important;
+            }
+            #main, .blog_nav .pre_next, .blog_comment {
+                width: 100% !important;
+            }
+            .blog_nav .pre_next, .blog_bottom {
+                text-align: center !important;
+            }
+           .blog_bottom ul {
+                display: inline-block !important;
+            }
+            div#blog_owner_logo img {
+                width: 64px !important;
+            }
+            div#local {
+                width: auto !important;
+                position: absolute !important;
+                right: 0 !important;
+                margin: 0 !important;
+            }
+            #blog_content {
+                height: auto !important;
+                overflow-y: auto !important;
+            }
+            .blog_title h3 {
+                font-size: 32px !important;
+            }
+        `;
+        $("head").appendChild(styleElement);
+        console.log("[Initial iteeye lite script]");
+    };
+    pureAction["http.?://www[.]iteye[.]com/magazines/.*"] = function () {
+        const styleElement = document.createElement("style");
+        styleElement.rel = "stylesheet";
+        styleElement.innerHTML = `
+            #local, #album_detail_wrap, .hide-article-box, #digg_bottom {
+                display: none !important;
+            }
+            #interview_main .hide-main-content {
+                height: auto !important;
+                overflow-y: auto !important;
+            }
+            #main, #interview_main {
+                width: 100% !important;
+            }
+        `;
+        $("head").appendChild(styleElement);
+        console.log("[Initial iteeye lite script]");
     };
     pureAction["http.?://www[.]cnblogs[.]com/.*/p/.*[.]html"] = function () {
         const styleElement = document.createElement("style");
