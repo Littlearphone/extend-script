@@ -249,6 +249,7 @@
             }
             #mainContent {
                 width: 100% !important;
+                margin: 10px !important;
             }
             #author_profile_info {
                 display: inline-block !important;
