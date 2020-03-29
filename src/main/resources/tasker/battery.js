@@ -36,7 +36,7 @@ var ACCESS_TOKEN = JSON.parse(gethttp(gettoken)).access_token;
 //发送消息(文本)
 var SMSRT = global('CTIME');
 var SMSRD = global('CDATE');
-var CONTENT = "Warning: Low battery\nDate: " + SMSRD + ",  Time: " + SMSRT;
+var CONTENT = "当前手机电池电量过低\n检测时间为" + SMSRD + " " + SMSRT;
 var message = JSON.stringify({
     "touser": "@all",
     "msgtype": "text",

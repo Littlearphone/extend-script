@@ -37,7 +37,7 @@ var ACCESS_TOKEN = JSON.parse(gethttp(gettoken)).access_token;
 var SMSRF = global('CNAME');
 var SMSRT = global('CTIME');
 var SMSRD = global('CDATE');
-var CONTENT = "Incoming: " + SMSRF + "\nDate: " + SMSRD + ",  Time: " + SMSRT;
+var CONTENT = "在" + SMSRD +  " " + SMSRT +"\n收到" + SMSRF + "的来电";
 var message = JSON.stringify({
     "touser": "@all",
     "msgtype": "text",

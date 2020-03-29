@@ -38,7 +38,7 @@ var SMSRF = global('SMSRF');
 var SMSRB = global('SMSRB');
 var SMSRT = global('SMSRT');
 var SMSRD = global('SMSRD');
-var CONTENT = "Incoming: " + SMSRF + "\nDate: " + SMSRD + ",  Time: " + SMSRT + "\nContent: " + SMSRB;
+var CONTENT = "在" + SMSRD +  " " + SMSRT +"\n收到" + SMSRF +"的短信：\n" + SMSRB;
 var message = JSON.stringify({
     "touser": "@all",
     "msgtype": "text",
