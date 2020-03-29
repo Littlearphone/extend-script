@@ -1,1 +1,1 @@
-# tampermonkey-script
+# extend-script
