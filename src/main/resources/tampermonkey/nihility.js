@@ -244,9 +244,9 @@
             }
             #full {
                 position: fixed !important;
-                top: auto !important; 
-                bottom: 10px !important; 
-                right: 10px !important; 
+                top: auto !important;
+                bottom: 10px !important;
+                right: 10px !important;
             }
             .box > div:nth-child(1) {
                 margin: 10px !important;
@@ -522,7 +522,7 @@
         setInterval(taskExecutor, 500);
         console.log("[Initial douyu lite script]");
     };
-    pureAction["http[s]?://www[.]bilibili[.]com/video/av.*"] = function() {
+    pureAction["http[s]?://www[.]bilibili[.]com/video/BV.*"] = function() {
         function doSpeedUp() {
             const selector = '.bilibili-player-video video';
             taskQueue.push({
@@ -585,6 +585,11 @@
                 if (!mutationRecord) {
                     return;
                 }
+                taskQueue.push({
+                    initial: () => !mutationRecord,
+                    finish: () => mutationRecord.playbackRate === 1.25,
+                    recursive: () => (mutationRecord.playbackRate = 1.25)
+                });
                 addAutoPlayNextEvent();
             });
             observer.observe(targetNode, {
