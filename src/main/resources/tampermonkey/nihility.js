@@ -16,7 +16,7 @@
     const MutationObserver = window.MutationObserver || window.WebKitMutationObserver || window.MozMutationObserver;
 
     function $(selector) {
-        return document.querySelector(selector);
+        return document.querySelector(selector) || document.createElement("DIV");
     }
 
     function doClick(obj) {
@@ -338,7 +338,7 @@
         $("head").appendChild(styleElement);
         console.log("[Initial iteeye lite script]");
     };
-    pureAction["http[s]?://www[.]cnblogs[.]com/.*/p/.*[.]html"] = function() {
+    pureAction["http[s]?://www[.]cnblogs[.]com/.*/(p|articles)/.*[.]html"] = function() {
         const styleElement = document.createElement("style");
         styleElement.rel = "stylesheet";
         styleElement.innerHTML = `
@@ -362,6 +362,12 @@
             }
             #main, #mainContent .forFlow {
                 margin: 0 auto !important;
+            }
+            body  {
+                background-size: 100% !important;
+            }
+            #header {
+                background: none !important;
             }
         `;
         $("head").appendChild(styleElement);
