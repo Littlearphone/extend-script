@@ -146,7 +146,7 @@
             .app-control.app-app, .vip-caise, .to-commentBox.to-reward, .blog_container_aside,
             .btn-readmore, .hide-article-box, .t0, .csdn-side-toolbar, .recommend-box, #addAdBox,
             .blog-content-box + script + div, div.recommend-right, .bdsharebuttonbox, .write-bolg-btn,
-            .widescreen-hide, .widescreen-more, #sharePost, .login-mark, #passportbox {
+            .widescreen-hide, .widescreen-more, #sharePost, .login-mark, #passportbox, iframe[src*=baidu] {
                 display: none !important;
             }
             .main_father .container#mainBox main {
