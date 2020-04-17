@@ -11,7 +11,7 @@
 // @grant        GM_getValue
 // @run-at       document-start
 // ==/UserScript==
-(function() {
+(function () {
     'use strict';
     const MutationObserver = window.MutationObserver || window.WebKitMutationObserver || window.MozMutationObserver;
 
@@ -60,7 +60,7 @@
 
     let taskQueue = [];
     const pureAction = {};
-    pureAction["http[s]?://www[.]jb51[.]net/(artical/)?.*[.]htm(l)?"] = function() {
+    pureAction["http[s]?://www[.]jb51[.]net/(artical/)?.*[.]htm(l)?"] = function () {
         const styleElement = document.createElement("style");
         styleElement.rel = "stylesheet";
         styleElement.innerHTML = `
@@ -106,7 +106,7 @@
         $("head").appendChild(styleElement);
         console.log("[Initial jb51 lite script]");
     };
-    pureAction["http[s]?://www[.]7down[.]com/soft/.*[.]html"] = function() {
+    pureAction["http[s]?://www[.]7down[.]com/soft/.*[.]html"] = function () {
         const styleElement = document.createElement("style");
         styleElement.rel = "stylesheet";
         styleElement.innerHTML = `
@@ -146,7 +146,7 @@
         $("head").appendChild(styleElement);
         console.log("[Initial 7down lite script]");
     };
-    pureAction["http[s]?://blog[.]csdn[.]net/.*/article/details/.*"] = function() {
+    pureAction["http[s]?://blog[.]csdn[.]net/.*/article/details/.*"] = function () {
         const styleElement = document.createElement("style");
         styleElement.rel = "stylesheet";
         styleElement.innerHTML = `
@@ -172,7 +172,7 @@
         $("head").appendChild(styleElement);
         console.log("[Initial csdn lite script]");
     };
-    pureAction["http[s]?://www[.]jianshu[.]com/p/.*"] = function() {
+    pureAction["http[s]?://www[.]jianshu[.]com/p/.*"] = function () {
         const styleElement = document.createElement("style");
         styleElement.rel = "stylesheet";
         styleElement.innerHTML = `
@@ -191,7 +191,7 @@
         $("body").className = "reader-night-mode";
         console.log("[Initial jianshu lite script]");
     };
-    pureAction["http[s]?://cloud[.]tencent[.]com/developer/article/.*"] = function() {
+    pureAction["http[s]?://cloud[.]tencent[.]com/developer/article/.*"] = function () {
         const styleElement = document.createElement("style");
         styleElement.rel = "stylesheet";
         styleElement.innerHTML = `
@@ -227,7 +227,7 @@
         $("head").appendChild(styleElement);
         console.log("[Initial tencent cloud lite script]");
     };
-    pureAction["http[s]?://www[.]linuxidc[.]com/Linux/.*[.]htm[l]?"] = function() {
+    pureAction["http[s]?://www[.]linuxidc[.]com/Linux/.*[.]htm[l]?"] = function () {
         const styleElement = document.createElement("style");
         styleElement.rel = "stylesheet";
         styleElement.innerHTML = `
@@ -241,7 +241,7 @@
         $("head").appendChild(styleElement);
         console.log("[Initial linuxidc lite script]");
     };
-    pureAction["http[s]?://blog[.]chinaunix[.]net/.*"] = function() {
+    pureAction["http[s]?://blog[.]chinaunix[.]net/.*"] = function () {
         const styleElement = document.createElement("style");
         styleElement.rel = "stylesheet";
         styleElement.innerHTML = `
@@ -290,7 +290,7 @@
         $("head").appendChild(styleElement);
         console.log("[Initial chinaunix lite script]");
     };
-    pureAction["http[s]?://www[.]iteye[.]com/blog/.*"] = function() {
+    pureAction["http[s]?://www[.]iteye[.]com/blog/.*"] = function () {
         const styleElement = document.createElement("style");
         styleElement.rel = "stylesheet";
         styleElement.innerHTML = `
@@ -327,7 +327,7 @@
         $("head").appendChild(styleElement);
         console.log("[Initial iteeye lite script]");
     };
-    pureAction["http[s]?://www[.]iteye[.]com/magazines/.*"] = function() {
+    pureAction["http[s]?://www[.]iteye[.]com/magazines/.*"] = function () {
         const styleElement = document.createElement("style");
         styleElement.rel = "stylesheet";
         styleElement.innerHTML = `
@@ -345,7 +345,7 @@
         $("head").appendChild(styleElement);
         console.log("[Initial iteeye lite script]");
     };
-    pureAction["http[s]?://www[.]cnblogs[.]com/.*/(p|articles)/.*[.]html"] = function() {
+    pureAction["http[s]?://www[.]cnblogs[.]com/.*/(p|articles)/.*[.]html"] = function () {
         const styleElement = document.createElement("style");
         styleElement.rel = "stylesheet";
         styleElement.innerHTML = `
@@ -381,7 +381,7 @@
         $("body").className = "reader-night-mode";
         console.log("[Initial cnblogs lite script]");
     };
-    pureAction["http.?://(.*[.])?segmentfault[.]com/a/.*"] = function() {
+    pureAction["http.?://(.*[.])?segmentfault[.]com/a/.*"] = function () {
         const styleElement = document.createElement("style");
         styleElement.rel = "stylesheet";
         styleElement.innerHTML = `
@@ -392,7 +392,7 @@
         $("head").appendChild(styleElement);
         console.log("[Initial segmentfault lite script]");
     };
-    pureAction["http.?://(.*[.])?segmentfault[.]com/q/.*"] = function() {
+    pureAction["http.?://(.*[.])?segmentfault[.]com/q/.*"] = function () {
         const styleElement = document.createElement("style");
         styleElement.rel = "stylesheet";
         styleElement.innerHTML = `
@@ -403,7 +403,7 @@
         $("head").appendChild(styleElement);
         console.log("[Initial segmentfault lite script]");
     };
-    pureAction["http[s]://blog[.]51cto[.]com/[0-9]+/[0-9]+"] = function() {
+    pureAction["http[s]://blog[.]51cto[.]com/[0-9]+/[0-9]+"] = function () {
         const styleElement = document.createElement("style");
         styleElement.rel = "stylesheet";
         styleElement.innerHTML = `
@@ -414,7 +414,7 @@
         $("head").appendChild(styleElement);
         console.log("[Initial 51cto lite script]");
     };
-    pureAction["http[s]?://www[.]pc6[.]com/softview/SoftView_.*[.]html"] = function() {
+    pureAction["http[s]?://www[.]pc6[.]com/softview/SoftView_.*[.]html"] = function () {
         const styleElement = document.createElement("style");
         styleElement.rel = "stylesheet";
         styleElement.innerHTML = `
@@ -447,7 +447,7 @@
         $("head").appendChild(styleElement);
         console.log("[Initial pc6 lite script]");
     };
-    pureAction["http[s]?://www[.]douyu[.]com/.+"] = function() {
+    pureAction["http[s]?://www[.]douyu[.]com/.+"] = function () {
         function doFullWebScreen() {
             const fullScreenSelector = '[title="网页全屏"]';
             taskQueue.push({
@@ -535,7 +535,7 @@
         setInterval(taskExecutor, 500);
         console.log("[Initial douyu lite script]");
     };
-    pureAction["http[s]?://www[.]bilibili[.]com/video/(av.*|BV.*)"] = function() {
+    pureAction["http[s]?://www[.]bilibili[.]com/video/(av.*|BV.*)"] = function () {
         function doSpeedUp() {
             const selector = '.bilibili-player-video video';
             taskQueue.push({
@@ -561,7 +561,7 @@
                     return document.querySelectorAll(selectors).length < 2;
                 },
                 finish: () => !$(".bilibili-player-video video").paused,
-                recursive: () => doClick($('.bilibili-player-video-btn-start'))
+                recursive: () => doClick($('.bilibili-player-video-btn-start')) || doSpeedUp()
             });
         }
 
@@ -571,7 +571,7 @@
                 maxRetry: 10,
                 initial: () => !$(selector),
                 finish: () => !$(selector),
-                recursive: function() {
+                recursive: function () {
                     let countTime = 0;
                     const series = [
                         1,
@@ -579,13 +579,13 @@
                         60 * 60
                     ];
                     const jumpNode = $(selector).lastChild;
-                    if(!jumpNode) {
+                    if (!jumpNode) {
                         return;
                     }
                     const lastTime = jumpNode.textContent;
                     lastTime.split(":")
-                            .reverse()
-                            .forEach((part, index) => (countTime += series[index] * part));
+                        .reverse()
+                        .forEach((part, index) => (countTime += series[index] * part));
                     $(".bilibili-player-video video").currentTime = countTime;
                     $(".bilibili-player-video-toast-bottom").innerHTML = "";
                 }
@@ -595,10 +595,10 @@
         function doAutoStartPlayNext() {
             addAutoPlayNextEvent();
             const targetNode = $("#bilibiliPlayer");
-            const observer = new MutationObserver(function(mutations) {
+            const observer = new MutationObserver(function (mutations) {
                 const mutationRecord = mutations.filter(mutation => mutation.type === "childList")
-                                                .flatMap(mutation => Array.from(mutation.addedNodes))
-                                                .find(target => target.tagName === "VIDEO");
+                    .flatMap(mutation => Array.from(mutation.addedNodes))
+                    .find(target => target.tagName === "VIDEO");
                 if (!mutationRecord) {
                     return;
                 }
@@ -618,7 +618,7 @@
 
         function addAutoPlayNextEvent() {
             const video = $(".bilibili-player-video video");
-            video && video.addEventListener("ended", function(e) {
+            video && video.addEventListener("ended", function (e) {
                 const paused = $('.video-state-pause');
                 const nextBtn = $('.bilibili-player-video-btn-next');
                 if (!paused || !nextBtn) {
