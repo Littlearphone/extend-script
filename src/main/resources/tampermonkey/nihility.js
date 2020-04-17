@@ -571,7 +571,11 @@
                         60,
                         60 * 60
                     ];
-                    const lastTime = $(selector).lastChild.textContent;
+                    const jumpNode = $(selector).lastChild;
+                    if(!jumpNode) {
+                        return;
+                    }
+                    const lastTime = jumpNode.textContent;
                     lastTime.split(":")
                             .reverse()
                             .forEach((part, index) => (countTime += series[index] * part));
