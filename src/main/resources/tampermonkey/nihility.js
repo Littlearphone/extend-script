@@ -20,6 +20,7 @@
     }
 
     function doClick(obj) {
+        console.log(`Click node ${obj.className}`);
         if (!obj) {
             return;
         }
@@ -34,15 +35,21 @@
 
     function taskExecutor() {
         taskQueue = taskQueue.filter(task => {
+            console.log(task);
             task.retry = (task.retry || 0);
             if (task.retry >= task.maxRetry) {
+                console.log("Max retry times");
                 return false;
             }
             if (typeof task.initial !== "function" || task.initial()) {
                 task.retry += 1;
+                console.log("Retry time increase");
                 return true;
             }
             if (typeof task.finish !== "function" || task.finish()) {
+                console.log(typeof task.finish !== "function");
+                console.log(task.finish());
+                console.log("Task already finish");
                 return false;
             }
             typeof task.recursive === "function" && task.recursive();
@@ -542,7 +549,7 @@
             const selector = 'button.bilibili-player-iconfont-web-fullscreen-off';
             taskQueue.push({
                 initial: () => !$(selector),
-                finish: () => $(".webfullscreen"),
+                finish: () => $(".webfullscreen").className.indexOf("webfullscreen") >= 0,
                 recursive: () => doClick($(selector))
             });
         }
