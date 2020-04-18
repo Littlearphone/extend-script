@@ -20,7 +20,6 @@
     }
 
     function doClick(obj) {
-        console.log(`Click node ${obj.className}`);
         if (!obj) {
             return;
         }
@@ -35,21 +34,15 @@
 
     function taskExecutor() {
         taskQueue = taskQueue.filter(task => {
-            console.log(task);
             task.retry = (task.retry || 0);
             if (task.retry >= task.maxRetry) {
-                console.log("Max retry times");
                 return false;
             }
             if (typeof task.initial !== "function" || task.initial()) {
                 task.retry += 1;
-                console.log("Retry time increase");
                 return true;
             }
             if (typeof task.finish !== "function" || task.finish()) {
-                console.log(typeof task.finish !== "function");
-                console.log(task.finish());
-                console.log("Task already finish");
                 return false;
             }
             typeof task.recursive === "function" && task.recursive();
@@ -452,13 +445,13 @@
             const fullScreenSelector = '[title="网页全屏"]';
             taskQueue.push({
                 initial: () => !$(fullScreenSelector),
-                finish: () => $('.is-fullScreenPage').className.indexOf('is-fullScreenPage') >= 0,
+                finish: () => $('.is-fullScreenPage').className,
                 recursive: () => doClick($(fullScreenSelector))
             });
             const allScreenSelector = 'body.is-fullScreenPage .layout-Player-asidetoggleButton';
             taskQueue.push({
                 initial: () => !$(allScreenSelector),
-                finish: () => $('.is-fullScreenAll').className.indexOf('is-fullScreenAll') >= 0,
+                finish: () => $('.is-fullScreenAll').className,
                 recursive: () => doClick($(allScreenSelector))
             });
         }
@@ -563,8 +556,8 @@
             const selector = 'button.bilibili-player-iconfont-web-fullscreen-off';
             taskQueue.push({
                 initial: () => !$(selector),
-                finish: () => doSpeedUp() || $(".webfullscreen").className.indexOf("webfullscreen") >= 0,
-                recursive: () =>doSpeedUp() || doClick($(selector))
+                finish: () => setTimeout(doSpeedUp, 500) && $(".webfullscreen").className,
+                recursive: () => setTimeout(doSpeedUp, 500) && doClick($(selector))
             });
         }
 
@@ -574,35 +567,46 @@
                     const selectors = ".bilibili-player-video video,.bilibili-player-video-btn-start";
                     return document.querySelectorAll(selectors).length < 2;
                 },
-                finish: () => doSpeedUp() || !$(".bilibili-player-video video").paused,
-                recursive: () => doSpeedUp() || doClick($('.bilibili-player-video-btn-start'))
+                finish: () => setTimeout(doSpeedUp, 500) && !$(".bilibili-player-video video").paused,
+                recursive: () => setTimeout(doSpeedUp, 500) && doClick($('.bilibili-player-video-btn-start'))
             });
+        }
+
+        function computeTime(jumpNode) {
+            if (!jumpNode) {
+                return 0;
+            }
+            let time = 0;
+            const series = [
+                1,
+                60,
+                60 * 60
+            ];
+            const lastTime = jumpNode.textContent;
+            lastTime.split(":")
+                .reverse()
+                .forEach((part, index) => (time += series[index] * part));
+            return time;
         }
 
         function doAutoStartPlayJump() {
             const selector = ".bilibili-player-video-toast-item-text";
+            const parent = ".bilibili-player-video-toast-bottom";
+            const video = ".bilibili-player-video video";
             taskQueue.push({
                 maxRetry: 10,
                 initial: () => !$(selector),
-                finish: () => !$(selector),
+                finish: () => {
+                    return $(selector).className && $(video).currentTime >= computeTime($(selector).lastChild);
+                },
                 recursive: function () {
-                    let countTime = 0;
-                    const series = [
-                        1,
-                        60,
-                        60 * 60
-                    ];
                     const jumpNode = $(selector).lastChild;
                     if (!jumpNode) {
                         return;
                     }
-                    const lastTime = jumpNode.textContent;
-                    lastTime.split(":")
-                        .reverse()
-                        .forEach((part, index) => (countTime += series[index] * part));
-                    $(".bilibili-player-video video").currentTime = countTime;
-                    $(".bilibili-player-video-toast-bottom").innerHTML = "";
-                    doSpeedUp();
+                    $(video).currentTime = computeTime(jumpNode);
+                    $(parent).innerHTML = "";
+                    setTimeout(doSpeedUp, 500);
                 }
             });
         }
