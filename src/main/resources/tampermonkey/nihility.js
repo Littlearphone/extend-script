@@ -452,13 +452,13 @@
             const fullScreenSelector = '[title="网页全屏"]';
             taskQueue.push({
                 initial: () => !$(fullScreenSelector),
-                finish: () => $('.is-fullScreenPage'),
+                finish: () => $('.is-fullScreenPage').className.indexOf('is-fullScreenPage') >= 0,
                 recursive: () => doClick($(fullScreenSelector))
             });
             const allScreenSelector = 'body.is-fullScreenPage .layout-Player-asidetoggleButton';
             taskQueue.push({
                 initial: () => !$(allScreenSelector),
-                finish: () => $('.is-fullScreenAll'),
+                finish: () => $('.is-fullScreenAll').className.indexOf('is-fullScreenAll') >= 0,
                 recursive: () => doClick($(allScreenSelector))
             });
         }
@@ -499,6 +499,8 @@
             .layout-Main {
                 padding-top: 0 !important;
                 margin-left: 0 !important;
+                overflow: hidden !important;
+                height: 100% !important;
             }
             .layout-Module {
                 margin-top: 100px !important;
@@ -518,10 +520,21 @@
                 bottom: 0;
             }
             body:not(.is-fullScreenPage) .layout-Player-video {
-                padding-top: calc(100% - 550px) !important;
+                padding-top: 0 !important;
+            }
+            .guessGameContainer {
+                bottom: -300px !important;
+                padding: 0 !important;
             }
             .layout-Module-head {
                 left: 0 !important;
+            }
+            body:not(.is-fullScreenPage) .layout-Player-main {
+                height: calc(100% - 200px) !important;
+            }
+            body:not(.is-fullScreenPage) .layout-Player, 
+            body:not(.is-fullScreenPage) .layout-Player-video {
+                height: calc(100% - 100px) !important;
             }
         `;
         if (window.location.href.indexOf("/directory") < 0) {
