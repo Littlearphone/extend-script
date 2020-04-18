@@ -550,8 +550,8 @@
             const selector = 'button.bilibili-player-iconfont-web-fullscreen-off';
             taskQueue.push({
                 initial: () => !$(selector),
-                finish: () => $(".webfullscreen").className.indexOf("webfullscreen") >= 0,
-                recursive: () => doClick($(selector))
+                finish: () => doSpeedUp() || $(".webfullscreen").className.indexOf("webfullscreen") >= 0,
+                recursive: () =>doSpeedUp() || doClick($(selector))
             });
         }
 
@@ -561,8 +561,8 @@
                     const selectors = ".bilibili-player-video video,.bilibili-player-video-btn-start";
                     return document.querySelectorAll(selectors).length < 2;
                 },
-                finish: () => !$(".bilibili-player-video video").paused,
-                recursive: () => doClick($('.bilibili-player-video-btn-start')) || doSpeedUp()
+                finish: () => doSpeedUp() || !$(".bilibili-player-video video").paused,
+                recursive: () => doSpeedUp() || doClick($('.bilibili-player-video-btn-start'))
             });
         }
 
@@ -589,6 +589,7 @@
                         .forEach((part, index) => (countTime += series[index] * part));
                     $(".bilibili-player-video video").currentTime = countTime;
                     $(".bilibili-player-video-toast-bottom").innerHTML = "";
+                    doSpeedUp();
                 }
             });
         }
