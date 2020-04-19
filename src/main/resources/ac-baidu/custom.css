@@ -1,0 +1,75 @@
+/**计数器的颜色样式*/
+div .AC-CounterT {
+    background: #FD9999;
+}
+
+/**右侧栏的样式-其实不开启更好看一些*/
+#content_right {
+    padding: 20px 15px 15px;
+    border-radius: 5px;
+    background-color: #fff;
+    box-sizing: border-box;
+    box-shadow: 0 0 20px 2px rgba(0, 0, 0, .1);
+    -webkit-box-shadow: 0 0 20px 2px rgba(0, 0, 0, .1);
+    -moz-box-shadow: 0 0 20px 2px rgba(0, 0, 0, .1);
+}
+
+/****可以加一些自己的背景图片,替换引号内的内容为可外链的图片即可****/
+body {
+    background-repeat: repeat-y;
+    background-size: 100%;
+    background-attachment: fixed;
+    background-image: url('https://timgsa.baidu.com/timg?image&quality=80&size=b9999_10000&sec=1587290771080&di=d9e514d1030a194e8eb44a95240a86c5&imgtype=0&src=http%3A%2F%2Fgss0.baidu.com%2F-Po3dSag_xI4khGko9WTAnF6hhy%2Fzhidao%2Fpic%2Fitem%2Fb812c8fcc3cec3fdc71d1f77d588d43f87942794.jpg');
+}
+
+/*****窗口背景的透明虚化效果*****/
+body > #wrapper, body > .wrap, body > #main, body #appbar, body #hdtbSum {
+    background: rgba(225, 225, 225, 0.5);
+}
+
+/**隐藏首页的大图标-修复可能导致外援样式异常**/
+body[baidu] #s_lg_img_new {
+    display: none !important;
+}
+
+#wrapper #content_left .result, #wrapper #content_left .c-container {
+    border-radius: 5px;
+}
+
+#u {
+    margin-top: 11px !important;
+}
+
+div.sp-separator,
+div.hit_top_new,
+#qrcodeCon, #u1,
+#bottom_layer, #lg {
+    display: none !important;
+}
+
+.s_ipt_wr {
+    background-color: white !important;
+}
+
+#head_wrapper {
+    height: 100% !important;
+}
+
+.s_form_wrapper.soutu-env-index {
+    position: fixed !important;
+    top: calc(50% - 100px) !important;
+}
+
+.s_form_wrapper.soutu-env-index .s_ipt_wr,
+.s_form_wrapper.soutu-env-index #su {
+    height: 50px !important;
+}
+
+.s_form_wrapper.soutu-env-index #form #kw {
+    height: 40px !important;
+}
+
+.s_form_wrapper.soutu-env-index #form .bdsug {
+    top: 50px !important;
+    font-size: 24px !important;
+}
