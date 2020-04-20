@@ -43,7 +43,9 @@ body[baidu] #s_lg_img_new {
 div.sp-separator,
 div.hit_top_new,
 #qrcodeCon, #u1,
-#bottom_layer, #lg {
+#bottom_layer, #lg,
+#s_top_wrap, #s_upfunc_menus,
+#u_sp, #s_side_wrapper {
     display: none !important;
 }
 
@@ -55,7 +57,8 @@ div.hit_top_new,
     height: 100% !important;
 }
 
-.s_form_wrapper.soutu-env-index {
+.s_form_wrapper.soutu-env-index,
+.s_form_wrapper.soutu-env-newindex form {
     position: fixed !important;
     top: calc(50% - 100px) !important;
 }
