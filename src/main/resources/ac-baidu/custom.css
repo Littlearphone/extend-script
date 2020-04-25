@@ -40,9 +40,13 @@ body[baidu] #s_lg_img_new {
     margin-top: 11px !important;
 }
 
+html {
+    overflow-y: auto;
+}
+
 div.sp-separator,
-div.hit_top_new,
-#qrcodeCon, #u1,
+div.hit_top_new, #bottom_space,
+#qrcodeCon, #u1, #s_wrap,
 #bottom_layer, #lg,
 #s_top_wrap, #s_upfunc_menus,
 #u_sp, #s_side_wrapper {
