@@ -548,7 +548,9 @@
             taskQueue.push({
                 initial: () => !$(selector),
                 finish: () => $(selector).playbackRate === 1.25,
-                recursive: () => ($(selector).playbackRate = 1.25)
+                recursive: () => {
+                    $(selector).playbackRate = 1.25;
+                }
             });
         }
 
@@ -611,30 +613,6 @@
             });
         }
 
-        function doAutoStartPlayNext() {
-            addAutoPlayNextEvent();
-            const targetNode = $("#bilibiliPlayer");
-            const observer = new MutationObserver(function (mutations) {
-                const mutationRecord = mutations.filter(mutation => mutation.type === "childList")
-                    .flatMap(mutation => Array.from(mutation.addedNodes))
-                    .find(target => target.tagName === "VIDEO");
-                if (!mutationRecord) {
-                    return;
-                }
-                taskQueue.push({
-                    initial: () => !mutationRecord,
-                    finish: () => mutationRecord.playbackRate === 1.25,
-                    recursive: () => (mutationRecord.playbackRate = 1.25)
-                });
-                addAutoPlayNextEvent();
-            });
-            observer.observe(targetNode, {
-                attributes: false,
-                childList: true,
-                subtree: true
-            });
-        }
-
         function addAutoPlayNextEvent() {
             const video = $(".bilibili-player-video video");
             video && video.addEventListener("ended", function (e) {
@@ -647,17 +625,38 @@
             });
         }
 
-        function doStart() {
-            const control = $(".video-control-show");
-            if (!control) {
-                setTimeout(doStart, 500);
-                return;
-            }
+        function doPreset() {
             doSpeedUp();
             doFullWebScreen();
             doAutoStartPlay();
             doAutoStartPlayJump();
-            doAutoStartPlayNext();
+            addAutoPlayNextEvent();
+        }
+
+        function doStart() {
+            const control = $("div#bofqi");
+            if (!control.id) {
+                setTimeout(doStart, 500);
+                return;
+            }
+            if ($(".bilibili-player-video video").tagName === 'VIDEO') {
+                doPreset();
+            }
+            const observer = new MutationObserver(function (mutations) {
+                const mutationRecord = mutations.filter(mutation => mutation.type === "childList")
+                    .flatMap(mutation => Array.from(mutation.addedNodes))
+                    .find(target => target.tagName === "VIDEO");
+                if (!mutationRecord) {
+                    return;
+                }
+                doPreset();
+                addAutoPlayNextEvent();
+            });
+            observer.observe(control, {
+                attributes: false,
+                childList: true,
+                subtree: true
+            });
             console.log("[Initial bilibili lite script]");
         }
 
