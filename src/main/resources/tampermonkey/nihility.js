@@ -664,6 +664,6 @@
         setInterval(taskExecutor, 500);
     };
     for (let reg in pureAction) {
-        new RegExp(reg).test(window.location.href) && pureAction[reg].call(this);
+        new RegExp(reg, 'i').test(window.location.href) && pureAction[reg].call(this);
     }
 })();
