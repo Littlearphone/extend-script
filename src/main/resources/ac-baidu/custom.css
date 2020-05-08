@@ -45,13 +45,16 @@ html {
 }
 
 div.sp-separator,
-div.hit_top_new, #bottom_space,
-#qrcodeCon, #u1, #s_wrap,
+div.hit_top_new,
+#qrcodeCon, #u1,
 #bottom_layer, #lg,
-#s_top_wrap, #s_upfunc_menus,
+#s_top_wrap,
+#b_opalpers,
+#s_upfunc_menus,
 #u_sp, #s_side_wrapper {
     display: none !important;
 }
+
 
 .s_ipt_wr {
     background-color: white !important;
@@ -79,4 +82,16 @@ div.hit_top_new, #bottom_space,
 .s_form_wrapper.soutu-env-index #form .bdsug {
     top: 50px !important;
     font-size: 24px !important;
+}
+
+.c-result-content {
+    margin-top: 30px !important;
+}
+
+.c-result-content article {
+    padding: 10px !important;
+}
+
+body[baidu], body[bing] {
+    min-width: auto !important;
 }
