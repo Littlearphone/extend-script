@@ -165,6 +165,28 @@
         $("head").appendChild(styleElement);
         console.log("[Initial csdn lite script]");
     };
+    pureAction["http[s]?://bbs[.]csdn[.]net/topics/.*"] = function () {
+        const styleElement = document.createElement("style");
+        styleElement.rel = "stylesheet";
+        styleElement.innerHTML = `
+            .login-mark, .login-wrap, .right-box, .news-nav, .mod_fun_wrap, .hide_topic_box,
+            span.login, .bbs_detail_wrap ~ *, #nav-left-menu li, .bbs_bread_wrap {
+                display: none !important;
+            }
+            #left-box, #bbs_detail_wrap, #bbs_title_bar, .topic_wrap .post_info, #nav-left-menu,
+            #nav-left-menu .search_bar {
+                width: 100% !important;
+            }
+            #nav-left-menu .search_bar .input_search {
+                width: calc(100% - 60px) !important;
+            }
+            #nav-left-menu .search_bar {
+                margin: 10px 0 !important;
+            }
+        `;
+        $("head").appendChild(styleElement);
+        console.log("[Initial csdn lite script]");
+    };
     pureAction["http[s]?://www[.]jianshu[.]com/p/.*"] = function () {
         const styleElement = document.createElement("style");
         styleElement.rel = "stylesheet";
@@ -357,7 +379,7 @@
                 display: inline-block !important;
             }
             #main {
-                position: inherit !important;
+                position: relative !important;
                 width: 1080px !important;
             }
             #main, #mainContent .forFlow {
@@ -406,6 +428,28 @@
         `;
         $("head").appendChild(styleElement);
         console.log("[Initial 51cto lite script]");
+    };
+    pureAction["http[s]://www[.]zhihu[.]com/(search?.*|question/.*)"] = function () {
+        const styleElement = document.createElement("style");
+        styleElement.rel = "stylesheet";
+        styleElement.innerHTML = `
+            .Modal-wrapper, .Modal-enter-done, .Question-sideColumn, .SearchSideBar,
+            .AppHeader-inner ul, .AppHeader-inner a, [aria-controls="Search-live"],
+            [aria-controls="Search-album"], [aria-controls="Search-publication"],
+            [aria-controls="Search-clubentity"], .AppHeader-userInfo {
+                display: none !important;
+            }
+            html {
+                overflow: auto !important;
+            }
+            .Question-mainColumn, .SearchMain, .AppHeader-inner .SearchBar,
+            .AppHeader-inner .SearchBar-toolWrapper, .AppHeader-inner .SearchBar-tool,
+            .AppHeader-inner .SearchBar-input {
+                width: 100% !important;
+            }
+        `;
+        $("head").appendChild(styleElement);
+        console.log("[Initial zhihu lite script]");
     };
     pureAction["http[s]?://www[.]pc6[.]com/softview/SoftView_.*[.]html"] = function () {
         const styleElement = document.createElement("style");
