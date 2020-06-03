@@ -95,3 +95,11 @@ div.hit_top_new,
 body[baidu], body[bing] {
     min-width: auto !important;
 }
+
+.op_dict3_lineone_result {
+    width: 100% !important;
+}
+
+.op_dict3_linetwo_result, .op_dict3_lineone_result .op_dict3_lineone_result_tip ~ span {
+    width: calc(100% - 48px) !important;
+}
