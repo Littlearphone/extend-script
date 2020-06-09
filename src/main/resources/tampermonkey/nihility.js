@@ -176,6 +176,7 @@
             #left-box, #bbs_detail_wrap, #bbs_title_bar, .topic_wrap .post_info, #nav-left-menu,
             #nav-left-menu .search_bar {
                 width: 100% !important;
+                overflow: inherit !important;
             }
             #nav-left-menu .search_bar .input_search {
                 width: calc(100% - 60px) !important;
