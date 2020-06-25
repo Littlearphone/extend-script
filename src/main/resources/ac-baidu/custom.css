@@ -44,14 +44,16 @@ html {
     overflow-y: auto;
 }
 
-div.sp-separator,
-div.hit_top_new,
-#qrcodeCon, #u1,
-#bottom_layer, #lg,
-#s_top_wrap,
-#b_opalpers,
-#s_upfunc_menus,
-#u_sp, #s_side_wrapper {
+div.sp-separator, div.hit_top_new,
+#qrcodeCon, #u1, #bottom_layer, #lg,
+#s_top_wrap, #b_opalpers, #s_upfunc_menus,
+#u_sp, #s_side_wrapper, .s-top-left,
+.s_form_wrapper.soutu-env-index #m ~ *,
+.s_tab_inner a[href*='b2b.baidu'],
+.s_tab_inner a[href*='wenku.baidu'],
+.s_tab_inner a[href*='zhidao.baidu'],
+.s_tab_inner a[href*='vsearch'],
+#s_wrap.s-isindex-wrap {
     display: none !important;
 }
 
@@ -77,6 +79,7 @@ div.hit_top_new,
 
 .s_form_wrapper.soutu-env-index #form #kw {
     height: 40px !important;
+    padding: 4px 16px !important;
 }
 
 .s_form_wrapper.soutu-env-index #form .bdsug {
@@ -94,4 +97,12 @@ div.hit_top_new,
 
 body[baidu], body[bing] {
     min-width: auto !important;
+}
+
+.myuserconfig {
+    margin: 13px 0 !important;
+}
+
+.wrapper_new #head.fix-head .s_form {
+    height: auto !important;
 }
