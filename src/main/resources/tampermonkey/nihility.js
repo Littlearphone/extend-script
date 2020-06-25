@@ -176,6 +176,7 @@
             #left-box, #bbs_detail_wrap, #bbs_title_bar, .topic_wrap .post_info, #nav-left-menu,
             #nav-left-menu .search_bar {
                 width: 100% !important;
+                overflow: inherit !important;
             }
             #nav-left-menu .search_bar .input_search {
                 width: calc(100% - 60px) !important;
@@ -255,6 +256,20 @@
         `;
         $("head").appendChild(styleElement);
         console.log("[Initial linuxidc lite script]");
+    };
+    pureAction["http[s]?://www.bejson.com/.*"] = function () {
+        const styleElement = document.createElement("style");
+        styleElement.rel = "stylesheet";
+        styleElement.innerHTML = `
+            .alert.bejson-gap, .save-data-con, .footer-nav, .recent-use-box, h1 {
+                display: none !important;
+            }
+            .editor-box1 .float-left, .editor-box1 .float-left #editor {
+                width: 100% !important;
+            }
+        `;
+        $("head").appendChild(styleElement);
+        console.log("[Initial bejson lite script]");
     };
     pureAction["http[s]?://blog[.]chinaunix[.]net/.*"] = function () {
         const styleElement = document.createElement("style");
