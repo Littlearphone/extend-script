@@ -601,7 +601,7 @@
         setInterval(taskExecutor, 500);
         console.log("[Initial douyu lite script]");
     };
-    pureAction["http[s]?://www[.]bilibili[.]com/video/(av.*|BV.*)"] = function () {
+    pureAction["http[s]?://www[.]bilibili[.]com/(video/(av.*|BV.*)|bangumi/play/.*)"] = function () {
         function doSpeedUp() {
             const selector = '.bilibili-player-video video';
             taskQueue.push({
@@ -693,7 +693,7 @@
         }
 
         function doStart() {
-            const control = $("div#bofqi");
+            const control = $("div#bilibiliPlayer");
             if (!control.id) {
                 setTimeout(doStart, 500);
                 return;
