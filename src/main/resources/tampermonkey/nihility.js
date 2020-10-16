@@ -11,7 +11,7 @@
 // @grant        GM_getValue
 // @run-at       document-start
 // ==/UserScript==
-(function () {
+(function() {
     'use strict';
     const MutationObserver = window.MutationObserver || window.WebKitMutationObserver || window.MozMutationObserver;
 
@@ -53,7 +53,7 @@
 
     let taskQueue = [];
     const pureAction = {};
-    pureAction["http[s]?://www[.]jb51[.]net/(artical/)?.*[.]htm(l)?"] = function () {
+    pureAction["http[s]?://www[.]jb51[.]net/(artical/)?.*[.]htm(l)?"] = function() {
         const styleElement = document.createElement("style");
         styleElement.rel = "stylesheet";
         styleElement.innerHTML = `
@@ -99,7 +99,7 @@
         $("head").appendChild(styleElement);
         console.log("[Initial jb51 lite script]");
     };
-    pureAction["http[s]?://www[.]7down[.]com/soft/.*[.]html"] = function () {
+    pureAction["http[s]?://www[.]7down[.]com/soft/.*[.]html"] = function() {
         const styleElement = document.createElement("style");
         styleElement.rel = "stylesheet";
         styleElement.innerHTML = `
@@ -139,7 +139,25 @@
         $("head").appendChild(styleElement);
         console.log("[Initial 7down lite script]");
     };
-    pureAction["http[s]?://blog[.]csdn[.]net/.*/article/details/.*"] = function () {
+    pureAction["http[s]?://www[.]csdn[.]net/"] = function() {
+        const styleElement = document.createElement("style");
+        styleElement.rel = "stylesheet";
+        styleElement.innerHTML = `
+            .app-control.app-app, .vip-caise, .to-commentBox.to-reward, .blog_container_aside,
+            .btn-readmore, .hide-article-box, .t0, .csdn-side-toolbar, .recommend-box, #addAdBox,
+            .blog-content-box + script + div, div.recommend-right, .bdsharebuttonbox, .write-bolg-btn,
+            .widescreen-hide, .widescreen-more, #sharePost, .login-mark, #passportbox, iframe,
+            .banner-ad-box, aside {
+                display: none !important;
+            }
+            main {
+                width: auto !important;
+            }
+        `;
+        $("head").appendChild(styleElement);
+        console.log("[Initial csdn lite script]");
+    };
+    pureAction["http[s]?://blog[.]csdn[.]net/.*/article/details/.*"] = function() {
         const styleElement = document.createElement("style");
         styleElement.rel = "stylesheet";
         styleElement.innerHTML = `
@@ -165,7 +183,7 @@
         $("head").appendChild(styleElement);
         console.log("[Initial csdn lite script]");
     };
-    pureAction["http[s]?://bbs[.]csdn[.]net/topics/.*"] = function () {
+    pureAction["http[s]?://bbs[.]csdn[.]net/topics/.*"] = function() {
         const styleElement = document.createElement("style");
         styleElement.rel = "stylesheet";
         styleElement.innerHTML = `
@@ -188,7 +206,7 @@
         $("head").appendChild(styleElement);
         console.log("[Initial csdn lite script]");
     };
-    pureAction["http[s]?://www[.]jianshu[.]com/p/.*"] = function () {
+    pureAction["http[s]?://www[.]jianshu[.]com/p/.*"] = function() {
         const styleElement = document.createElement("style");
         styleElement.rel = "stylesheet";
         styleElement.innerHTML = `
@@ -207,7 +225,7 @@
         $("body").className = "reader-night-mode";
         console.log("[Initial jianshu lite script]");
     };
-    pureAction["http[s]?://cloud[.]tencent[.]com/developer/article/.*"] = function () {
+    pureAction["http[s]?://cloud[.]tencent[.]com/developer/article/.*"] = function() {
         const styleElement = document.createElement("style");
         styleElement.rel = "stylesheet";
         styleElement.innerHTML = `
@@ -243,7 +261,7 @@
         $("head").appendChild(styleElement);
         console.log("[Initial tencent cloud lite script]");
     };
-    pureAction["http[s]?://www[.]linuxidc[.]com/Linux/.*[.]htm[l]?"] = function () {
+    pureAction["http[s]?://www[.]linuxidc[.]com/Linux/.*[.]htm[l]?"] = function() {
         const styleElement = document.createElement("style");
         styleElement.rel = "stylesheet";
         styleElement.innerHTML = `
@@ -257,21 +275,59 @@
         $("head").appendChild(styleElement);
         console.log("[Initial linuxidc lite script]");
     };
-    pureAction["http[s]?://www.bejson.com/.*"] = function () {
+    pureAction["http[s]?://www.bejson.com/.*"] = function() {
         const styleElement = document.createElement("style");
         styleElement.rel = "stylesheet";
         styleElement.innerHTML = `
-            .alert.bejson-gap, .save-data-con, .footer-nav, .recent-use-box, h1 {
+            .alert.bejson-gap, .save-data-con, .footer-nav, .recent-use-box, h1,
+            .editor-box1 ~ *, footer.html-footer, footer.html-footer ~ *, #resize,
+            .btn-group ~ :not(button) {
                 display: none !important;
             }
-            .editor-box1 .float-left, .editor-box1 .float-left #editor {
+            .editor-box1 .float-left, #editor .CodeMirror {
                 width: 100% !important;
+                float: none !important;
+                height: 100% !important;
+            }
+            .editor-box1 .float-left #editor {
+                width: 100% !important;
+                height: calc(100% - 60px) !important;
+            }
+            .editor-box1 {
+                position: fixed !important;
+                top: 80px !important;
+                bottom: 10px !important;
+                right: 10px !important;
+                left: 10px !important;
+                width: auto !important;
             }
         `;
         $("head").appendChild(styleElement);
         console.log("[Initial bejson lite script]");
     };
-    pureAction["http[s]?://blog[.]chinaunix[.]net/.*"] = function () {
+    pureAction["http[s]?://blog.didispace.com/.*"] = function() {
+        const styleElement = document.createElement("style");
+        styleElement.rel = "stylesheet";
+        styleElement.innerHTML = `
+            #read-more-wrap, aside, footer, #carousel-example-captions {
+                display: none !important;
+            }
+            .article {
+                height: auto !important;
+            }
+            section {
+                width: auto !important;
+            }
+        `;
+        window.location.pathname !== "/" && (styleElement.innerHTML += `
+            section > div {
+                display: none !important;
+            }
+        `);
+        $("head").appendChild(styleElement);
+        console.log("[Initial didispace lite script]");
+    };
+    pureAction["http[s]?://blog[.]chinaunix[.]net/.*"] = function() {
         const styleElement = document.createElement("style");
         styleElement.rel = "stylesheet";
         styleElement.innerHTML = `
@@ -320,7 +376,7 @@
         $("head").appendChild(styleElement);
         console.log("[Initial chinaunix lite script]");
     };
-    pureAction["http[s]?://www[.]iteye[.]com/blog/.*"] = function () {
+    pureAction["http[s]?://www[.]iteye[.]com/blog/.*"] = function() {
         const styleElement = document.createElement("style");
         styleElement.rel = "stylesheet";
         styleElement.innerHTML = `
@@ -357,7 +413,7 @@
         $("head").appendChild(styleElement);
         console.log("[Initial iteeye lite script]");
     };
-    pureAction["http[s]?://www[.]iteye[.]com/magazines/.*"] = function () {
+    pureAction["http[s]?://www[.]iteye[.]com/magazines/.*"] = function() {
         const styleElement = document.createElement("style");
         styleElement.rel = "stylesheet";
         styleElement.innerHTML = `
@@ -375,7 +431,7 @@
         $("head").appendChild(styleElement);
         console.log("[Initial iteeye lite script]");
     };
-    pureAction["http[s]?://www[.]cnblogs[.]com/.*/(p|articles)/.*[.]html"] = function () {
+    pureAction["http[s]?://www[.]cnblogs[.]com/.*/(p|articles)/.*[.]html"] = function() {
         const styleElement = document.createElement("style");
         styleElement.rel = "stylesheet";
         styleElement.innerHTML = `
@@ -400,9 +456,6 @@
             #main, #mainContent .forFlow {
                 margin: 0 auto !important;
             }
-            body  {
-                background-size: 100% !important;
-            }
             #header {
                 background: none !important;
             }
@@ -411,7 +464,22 @@
         $("body").className = "reader-night-mode";
         console.log("[Initial cnblogs lite script]");
     };
-    pureAction["http.?://(.*[.])?segmentfault[.]com/a/.*"] = function () {
+    pureAction["http.?://(www[.])?segmentfault[.]com/"] = function() {
+        const styleElement = document.createElement("style");
+        styleElement.rel = "stylesheet";
+        styleElement.innerHTML = `
+            #sf-article > div > div:last-child, #comment-area ~ *, #footer,
+            #loginBanner, .container .right {
+                display: none !important;
+            }
+            .container .middle {
+                width: calc(100% - 210px);
+            }
+        `;
+        $("head").appendChild(styleElement);
+        console.log("[Initial segmentfault lite script]");
+    };
+    pureAction["http.?://(.*[.])?segmentfault[.]com/a/.*"] = function() {
         const styleElement = document.createElement("style");
         styleElement.rel = "stylesheet";
         styleElement.innerHTML = `
@@ -422,7 +490,7 @@
         $("head").appendChild(styleElement);
         console.log("[Initial segmentfault lite script]");
     };
-    pureAction["http.?://(.*[.])?segmentfault[.]com/q/.*"] = function () {
+    pureAction["http.?://(.*[.])?segmentfault[.]com/q/.*"] = function() {
         const styleElement = document.createElement("style");
         styleElement.rel = "stylesheet";
         styleElement.innerHTML = `
@@ -433,7 +501,7 @@
         $("head").appendChild(styleElement);
         console.log("[Initial segmentfault lite script]");
     };
-    pureAction["http[s]://blog[.]51cto[.]com/[0-9]+/[0-9]+"] = function () {
+    pureAction["http[s]://blog[.]51cto[.]com/[0-9]+/[0-9]+"] = function() {
         const styleElement = document.createElement("style");
         styleElement.rel = "stylesheet";
         styleElement.innerHTML = `
@@ -444,7 +512,7 @@
         $("head").appendChild(styleElement);
         console.log("[Initial 51cto lite script]");
     };
-    pureAction["http[s]://www[.]zhihu[.]com/(search?.*|question/.*)"] = function () {
+    pureAction["http[s]://www[.]zhihu[.]com/(search?.*|question/.*)"] = function() {
         const styleElement = document.createElement("style");
         styleElement.rel = "stylesheet";
         styleElement.innerHTML = `
@@ -466,7 +534,7 @@
         $("head").appendChild(styleElement);
         console.log("[Initial zhihu lite script]");
     };
-    pureAction["http[s]?://www[.]pc6[.]com/softview/SoftView_.*[.]html"] = function () {
+    pureAction["http[s]?://www[.]pc6[.]com/softview/SoftView_.*[.]html"] = function() {
         const styleElement = document.createElement("style");
         styleElement.rel = "stylesheet";
         styleElement.innerHTML = `
@@ -499,7 +567,7 @@
         $("head").appendChild(styleElement);
         console.log("[Initial pc6 lite script]");
     };
-    pureAction["http[s]?://www[.]douyu[.]com/.+"] = function () {
+    pureAction["http[s]?://www[.]douyu[.]com/.+"] = function() {
         function doFullWebScreen() {
             const fullScreenSelector = '[title="网页全屏"]';
             taskQueue.push({
@@ -645,8 +713,8 @@
             ];
             const lastTime = jumpNode.textContent;
             lastTime.split(":")
-                .reverse()
-                .forEach((part, index) => (time += series[index] * part));
+                    .reverse()
+                    .forEach((part, index) => (time += series[index] * part));
             return time;
         }
 
@@ -660,7 +728,7 @@
                 finish: () => {
                     return $(selector).className && $(video).currentTime >= computeTime($(selector).lastChild);
                 },
-                recursive: function () {
+                recursive: function() {
                     const jumpNode = $(selector).lastChild;
                     if (!jumpNode) {
                         return;
@@ -674,7 +742,7 @@
 
         function addAutoPlayNextEvent() {
             const video = $(".bilibili-player-video video");
-            video && video.addEventListener("ended", function (e) {
+            video && video.addEventListener("ended", function(e) {
                 const paused = $('.video-state-pause');
                 const nextBtn = $('.bilibili-player-video-btn-next');
                 if (!paused || !nextBtn) {
@@ -701,10 +769,10 @@
             if ($(".bilibili-player-video video").tagName === 'VIDEO') {
                 doPreset();
             }
-            const observer = new MutationObserver(function (mutations) {
+            const observer = new MutationObserver(function(mutations) {
                 const mutationRecord = mutations.filter(mutation => mutation.type === "childList")
-                    .flatMap(mutation => Array.from(mutation.addedNodes))
-                    .find(target => target.tagName === "VIDEO");
+                                                .flatMap(mutation => Array.from(mutation.addedNodes))
+                                                .find(target => target.tagName === "VIDEO");
                 if (!mutationRecord) {
                     return;
                 }

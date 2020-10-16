@@ -1,0 +1,47 @@
+/****************************************************************************************************************************************************
+ *                                                                                                                                                  *
+ *  * Copyright © 2020, Hangzhou Hikvision Digital Technology Co., Ltd. All Rights Reserved.                                                        *
+ *  * This content is limited to the internal use of the Hangzhou Hikvision Digital Technology Co. and is prohibited from forwarding.               *
+ *  * Website: http://www.hikvision.com                                                                                                             *
+ *                                                                                                                                                  *
+ ****************************************************************************************************************************************************/
+
+body {
+    margin: 0;
+    padding: 0;
+}
+
+iframe {
+    width: 49.9%;
+    height: calc(100% - 32px);
+    position: fixed;
+}
+
+.search-form {
+    height: 32px;
+}
+
+.search-form input {
+    width: 100%;
+    height: 30px;
+    border: 0;
+    box-shadow: 0 0 10px grey;
+    text-align: center;
+    color: gray;
+    font-size: 12px;
+    transition: 150ms all;
+}
+
+.search-form input:focus {
+    outline: none;
+    font-size: 16px;
+    box-shadow: 0 0 10px #409eff;
+}
+
+.left-search-frame {
+    left: 0;
+}
+
+.right-search-frame {
+    right: 0;
+}
