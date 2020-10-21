@@ -23,8 +23,16 @@ body {
 }
 
 /*****窗口背景的透明虚化效果*****/
-body > #wrapper, body > .wrap, body > #main, body #appbar, body #hdtbSum {
+body[baidu] > #wrapper, body[baidu] > .wrap, body[baidu] > #main,
+body[baidu] #appbar, body[baidu] #hdtbSum {
     background: rgba(225, 225, 225, 0.5);
+    width: 100%;
+    min-width: 100%;
+}
+
+body[baidu] .s-isindex-wrap #form.fm {
+    max-width: 660px;;
+    margin: 0 auto;
 }
 
 /**隐藏首页的大图标-修复可能导致外援样式异常**/
@@ -46,45 +54,55 @@ html {
 
 div.sp-separator, div.hit_top_new,
 #qrcodeCon, #u1, #bottom_layer, #lg,
-#s_top_wrap, #b_opalpers, #s_upfunc_menus,
-#u_sp, #s_side_wrapper, .s-top-left,
-.s_form_wrapper.soutu-env-index #m ~ *,
-.s_tab_inner a[href*='b2b.baidu'],
-.s_tab_inner a[href*='wenku.baidu'],
-.s_tab_inner a[href*='zhidao.baidu'],
-.s_tab_inner a[href*='vsearch'],
-#s_wrap.s-isindex-wrap {
+#s_top_wrap, #fbpgbt, #b_opalpers, #s_wrap,
+#s_upfunc_menus, #u_sp, #s_side_wrapper,
+body[baidu] .toindex, body[baidu] #myuser ~ a[name='tj_settingicon'],
+body[baidu] .bdpfmenu, body[baidu] #s-top-left,
+body[baidu] #s_tab [href^="/sf/vsearch"],
+body[baidu] #s_tab [href^="http://zhidao.baidu.com"],
+body[baidu] #s_tab [href^="http://wenku.baidu.com"],
+body[baidu] #s_tab [href*="b2b.baidu.com"],
+#container.sam_newgrid #content_left div[tpl*='recommend_list'],
+body[bing] #sb_form .b_logoArea,
+body[bing] #b_results > .b_pag, body[bing] .b_footer,
+body[bing] #b_content #b_results li.b_ans,
+body[bing] #b_content #ev_talkbox_wrapper,
+body[baidu] #container #rs,
+body[baidu] .wrapper_new #foot,
+body[baidu] #wrapper #page {
     display: none !important;
 }
 
-
 .s_ipt_wr {
     background-color: white !important;
-}
-
-#head_wrapper {
-    height: 100% !important;
 }
 
 .s_form_wrapper.soutu-env-index,
 .s_form_wrapper.soutu-env-newindex form {
     position: fixed !important;
     top: calc(50% - 100px) !important;
+    width: 100% !important;
 }
 
-.s_form_wrapper.soutu-env-index .s_ipt_wr,
-.s_form_wrapper.soutu-env-index #su {
-    height: 50px !important;
+body[baidu] #head_wrapper #kw,
+body[baidu] .head_wrapper:not(.s-isindex-wrap) span.s_ipt_wr {
+    border: 2px solid #4E6EF2 !important
 }
 
-.s_form_wrapper.soutu-env-index #form #kw {
-    height: 40px !important;
-    padding: 4px 16px !important;
-}
-
-.s_form_wrapper.soutu-env-index #form .bdsug {
-    top: 50px !important;
+body[baidu] .s_form_wrapper.soutu-env-index #form .bdsug {
+    top: 37px !important;
     font-size: 24px !important;
+    width: calc(100% - 119px) !important;
+}
+
+body[baidu] .wrapper_new #form .bdsug-new {
+    top: 33px !important;
+    font-size: 24px !important;
+    width: calc(100% - 128px) !important;
+}
+
+body[baidu] .s_form_wrapper.soutu-env-index #form .bdsug li {
+    font-size: 20px !important;
 }
 
 .c-result-content {
@@ -95,10 +113,6 @@ div.sp-separator, div.hit_top_new,
     padding: 10px !important;
 }
 
-body[baidu], body[bing] {
-    min-width: auto !important;
-}
-
 .op_dict3_lineone_result {
     width: 100% !important;
 }
@@ -107,11 +121,198 @@ body[baidu], body[bing] {
     width: calc(100% - 48px) !important;
 }
 
-
-.myuserconfig {
-    margin: 13px 0 !important;
+#container.sam_newgrid #content_left > div {
+    width: auto !important;
+    min-width: auto !important;
 }
 
-.wrapper_new #head.fix-head .s_form {
-    height: auto !important;
+body[baidu] #wrapper_wrapper, body[baidu] #wrapper_wrapper #container {
+    margin: 0 !important;
+}
+
+#b_content #b_results > li#mfa_root.fabcolapse {
+    width: auto !important;
+    padding: 0 !important;
+    border-radius: 25px !important;
+}
+
+body[baidu] .wrapper_new #head {
+    min-width: auto !important;
+}
+
+body[baidu] .wrapper_new #s_tab {
+    padding-top: 70px !important;
+}
+
+body[baidu] #wrapper_wrapper #container {
+    width: auto !important;
+    padding: 0 !important;
+}
+
+body[baidu] #container.sam_newgrid #content_left {
+    width: calc(100% - 20px) !important;
+    margin: 10px !important;
+    padding-left: 0 !important;
+}
+
+body[baidu] .wrapper_new .s_form {
+    display: inline-block;
+    width: calc(100% - 200px);
+}
+
+body[baidu] .wrapper_new .s-isindex-wrap .s_form {
+    width: 100% !important;
+}
+
+body[baidu] .wrapper_new .soutu-env-result .fm {
+    margin: 15px 0 0 19px;
+    width: calc(100% - 130px);
+}
+
+body[baidu] .wrapper_s #u {
+    position: relative;
+}
+
+body[baidu] .wrapper_new #u {
+    width: 160px !important;
+    height: auto;
+    margin: 0 5px 10px;
+    display: inline-block;
+    padding: 0 !important;
+    vertical-align: top;
+}
+
+body[baidu] .wrapper_s #u > * {
+    margin-top: 0 !important;
+}
+
+body[baidu] .wrapper_new #u > #myuser {
+    margin: 8px 0 0 0 !important;
+}
+
+body[baidu] .wrapper_new #u > a {
+    background-color: rgba(248, 248, 248, 0.4);
+    color: black;
+    width: 40px;
+    text-align: center;
+    margin: auto;
+    vertical-align: middle;
+    display: inline-block;
+}
+
+body[baidu] .wrapper_new #u > a:hover {
+    color: black;
+    text-decoration: underline;
+}
+
+body[baidu] form.fm .s_ipt_wr.bg {
+    width: auto !important;
+    min-width: calc(100% - 117px);
+}
+
+body[baidu] #head_wrapper .soutu-env-nomac #form #kw {
+    width: calc(100% - 65px) !important;
+}
+
+body[baidu] #wrapper .head_nums_cont_outer .nums {
+    width: auto;
+    margin: 0 20px;
+}
+
+body[baidu], body[bing], body[bing] #b_header {
+    min-width: auto !important;
+    width: 100% !important;
+}
+
+body[bing] #b_header {
+    position: fixed;
+    z-index: 10;
+    backdrop-filter: blur(10px);
+    background-color: rgba(248, 248, 248, 0.4);
+}
+
+body[bing] #b_content {
+    display: block;
+    background-color: rgba(225, 225, 225, 0.5) !important;
+    padding: 145px 0 0;
+}
+
+body[bing] #b_content .b_underSearchbox {
+    margin: 0 !important;
+    padding: 10px 20px !important;
+}
+
+body[bing] #b_content #b_results {
+    width: auto !important;
+    max-width: inherit;
+}
+
+body[bing] #b_content #b_results .b_title:hover a img {
+    opacity: 0;
+}
+
+body[bing] #b_header .b_scopebar > ul {
+    height: 50px;
+}
+
+body[bing] #b_header .b_scopebar li {
+    line-height: 40px;
+}
+
+body[bing] #b_header #sb_form {
+    margin: 0 10px;
+}
+
+body[bing] #b_header #sb_form .b_searchboxForm .b_searchbox.b_softkey {
+    width: 495px !important;
+}
+
+body[baidu] #head .head_wrapper {
+    transform: unset;
+    justify-content: unset;
+}
+
+body[baidu] #container.sam_newgrid .search_tool_conter {
+    width: calc(100% - 35px);
+    margin: 0 20px !important;
+}
+
+body[baidu] #container.sam_newgrid #content_left > div,
+body[bing] #b_content #b_results > li:not(#mfa_root) {
+    margin-bottom: 5px;
+}
+
+body[baidu] .new-pmd .c-gap-top > div.c-row,
+body[baidu] .op-img-address-desktop-cont > div {
+    display: inline-block;
+}
+
+body[baidu] #wrapper #content_left .c-container:hover,
+body[baidu] #wrapper #content_left .result:hover,
+body[baidu] #wrapper #content_left .c-container:hover article,
+body[bing] #b_content #b_results > li:not(#mfa_root):hover {
+    box-shadow: 0 0 10px grey;
+}
+
+::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+}
+
+::-webkit-scrollbar-track {
+    -webkit-box-shadow: inset 0 0 2px rgba(0, 0, 0, 0.3);
+}
+
+::-webkit-scrollbar-thumb {
+    border-radius: 5px;
+    background-color: rgba(0, 0, 0, .1);
+    -webkit-box-shadow: inset 0 0 2px rgba(0, 0, 0, 0.5);
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #ccc;
+}
+
+::-webkit-scrollbar-thumb:active {
+    background: #999;
 }
