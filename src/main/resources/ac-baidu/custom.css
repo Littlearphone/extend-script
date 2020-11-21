@@ -77,10 +77,14 @@ body[baidu] #wrapper #page {
     background-color: white !important;
 }
 
+.s_form_wrapper.soutu-env-newindex form {
+    left: calc(50% - 330px);
+}
+
 .s_form_wrapper.soutu-env-index,
 .s_form_wrapper.soutu-env-newindex form {
     position: fixed !important;
-    top: calc(50% - 100px) !important;
+    top: 50% !important;
     width: 100% !important;
 }
 
@@ -166,7 +170,7 @@ body[baidu] .wrapper_new .s-isindex-wrap .s_form {
 
 body[baidu] .wrapper_new .soutu-env-result .fm {
     margin: 15px 0 0 19px;
-    width: calc(100% - 130px);
+    width: calc(100% - 160px);
 }
 
 body[baidu] .wrapper_s #u {
@@ -174,12 +178,26 @@ body[baidu] .wrapper_s #u {
 }
 
 body[baidu] .wrapper_new #u {
-    width: 160px !important;
+    width: 190px !important;
     height: auto;
     margin: 0 5px 10px;
     display: inline-block;
     padding: 0 !important;
     vertical-align: top;
+}
+
+body[baidu] .wrapper_new #head_wrapper #u {
+    position: fixed !important;
+    left: calc(50% - 80px) !important;
+}
+
+body[baidu] .wrapper_new #head_wrapper #u #user {
+    width: fit-content !important;
+    background: none;
+}
+
+body[baidu] .wrapper_new #head_wrapper #u #user .s-top-img-wrapper {
+    display: block !important;
 }
 
 body[baidu] .wrapper_s #u > * {
@@ -270,6 +288,7 @@ body[bing] #b_header #sb_form .b_searchboxForm .b_searchbox.b_softkey {
 body[baidu] #head .head_wrapper {
     transform: unset;
     justify-content: unset;
+    height: 100%;
 }
 
 body[baidu] #container.sam_newgrid .search_tool_conter {
