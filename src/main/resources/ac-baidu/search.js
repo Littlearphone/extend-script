@@ -1,10 +1,3 @@
-/****************************************************************************************************************************************************
- *                                                                                                                                                  *
- *  * Copyright © 2020, Hangzhou Hikvision Digital Technology Co., Ltd. All Rights Reserved.                                                        *
- *  * This content is limited to the internal use of the Hangzhou Hikvision Digital Technology Co. and is prohibited from forwarding.               *
- *  * Website: http://www.hikvision.com                                                                                                             *
- *                                                                                                                                                  *
- ****************************************************************************************************************************************************/
 (function() {
     const engines = ['https://cn.bing.com?q=', 'https://baidu.com/s?wd='];
     const search = window.location.search;
