@@ -3,10 +3,11 @@
     const search = window.location.search;
     const args = search.replace('?', '').split('&');
     const kw = args.map(arg => arg.split('=')).find(pair => pair[0] === 'kw');
-    const input = $$(".search-form input");
+    const input = $$('.search-form input');
     if (kw) {
+		kw[1].indexOf('+') >= 0 && (kw[1] = kw[1].replaceAll('+', ' '));
         doSearch(kw[1]);
-        input.value = decodeURI(kw[1]);
+        input.value = decodeURIComponent(kw[1]);
     }
     if (!input.value) {
         engines.forEach((url, index) => $$(`iframe:nth-of-type(${index + 1})`).src = url);
