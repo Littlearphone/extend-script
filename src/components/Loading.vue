@@ -86,10 +86,6 @@ if ($ && !$.detect) {
   background-color: rgba(255, 255, 255, .5);
 }
 
-.tuner-loading-wrapper {
-
-}
-
 .tuner-loading-block {
   top: 0;
   left: 0;
@@ -157,29 +153,5 @@ if ($ && !$.detect) {
     -webkit-transform: scale(1.7) translateZ(0);
     transform: scale(1.7) translateZ(0)
   }
-}
-
-
-::-webkit-scrollbar {
-  width: 10px;
-  height: 10px;
-}
-
-::-webkit-scrollbar-track {
-  -webkit-box-shadow: inset 0 0 2px rgba(0, 0, 0, 0.3);
-}
-
-::-webkit-scrollbar-thumb {
-  border-radius: 5px;
-  background-color: rgba(0, 0, 0, .1);
-  -webkit-box-shadow: inset 0 0 2px rgba(0, 0, 0, 0.5);
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: #ccc;
-}
-
-::-webkit-scrollbar-thumb:active {
-  background: #999;
 }
 </style>

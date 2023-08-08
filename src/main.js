@@ -1,10 +1,11 @@
-import { createApp } from 'vue'
+import {createApp} from 'vue'
 import Baidu from './views/Baidu.vue'
 import Bing from './views/Bing.vue'
+import './styles/index.scss'
 
 const mappings = {
-  'http(s)?:\/\/(www.)?baidu.com.*': Baidu,
-  'http(s)?:\/\/cn.bing.com(\/search)?.*([?&]q=.*).*': Bing
+  'http(s)?://(www.)?baidu.com.*': Baidu,
+  'http(s)?://cn.bing.com(/search)?.*([?&]q=.*).*': Bing
 }
 
 function loadModule(module) {

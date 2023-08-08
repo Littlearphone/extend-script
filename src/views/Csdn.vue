@@ -3,7 +3,7 @@
 <script setup>
 document.body.setAttribute('csdn', '')
 </script>
-<style>
+<style lang="scss">
 [csdn] {
   display: none;
 }
