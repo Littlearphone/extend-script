@@ -1,17 +1,20 @@
 {
-  "name": "tampermonkey-script",
-  "version": "0.0.0",
+  "name": "nihility-script",
+  "version": "1.0.0",
+  "type": "module",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
     "serve": "vite preview"
   },
   "dependencies": {
-    "vue": "3.3.4"
+    "vue": "latest"
   },
   "devDependencies": {
-    "@vitejs/plugin-vue": "4.2.3",
-    "sass": "1.64.2",
-    "vite": "4.4.6"
+    "@vitejs/plugin-vue": "5.1.2",
+    "ssh2-sftp-client": "^11.0.0",
+    "moment": "latest",
+    "sass": "latest",
+    "vite": "5.4.6"
   }
 }

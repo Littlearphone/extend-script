@@ -1,30 +1,31 @@
-import {createApp} from 'vue'
-import Baidu from './views/Baidu.vue'
-import Bing from './views/Bing.vue'
 import './styles/index.scss'
+import { createApp } from 'vue'
+import { MAPPINGS } from './mappings'
+import { logger } from './utils/logger.js'
 
-const mappings = {
-  'http(s)?://(www.)?baidu.com.*': Baidu,
-  'http(s)?://cn.bing.com(/search)?.*([?&]q=.*).*': Bing
-}
 
 function loadModule(module) {
   if (!module) {
-    return
+    return logger.info('没有合适的模块可启动')
   }
 
   function loadApp() {
+    logger.debug(`页面结构加载完成，开始加载模块：${MAPPINGS[module].__name}`)
     document.removeEventListener('DOMContentLoaded', loadApp)
-    const dataId = 'extend-script'
+    if (top !== window) {
+      document.body.setAttribute('nested-window', '')
+    }
+    document.body.setAttribute(location.hostname.replaceAll('.', '-'), '')
+    const dataId = 'nihility-entry'
     document.body.innerHTML += `<div data-id="${dataId}"></div>`
-    createApp(mappings[module]).mount(`[data-id="${dataId}"]`)
+    createApp(MAPPINGS[module]).mount(`[data-id="${dataId}"]`)
   }
 
   if (!document.body) {
-    document.addEventListener('DOMContentLoaded', loadApp)
-    return
+    logger.debug('页面结构加载中...')
+    return document.addEventListener('DOMContentLoaded', loadApp)
   }
   loadApp()
 }
 
-loadModule(Object.keys(mappings).filter(key => new RegExp(key).test(location.href)))
+loadModule(Object.keys(MAPPINGS).find(key => new RegExp(key).test(location.href)))

@@ -1,14 +1,22 @@
+import moment from 'moment'
 import { defineConfig } from 'vite'
 import vue from '@vitejs/plugin-vue'
 // https://vitejs.dev/config/
+const monthStart = moment().startOf('month').toDate()
+monthStart.setHours(0, 0, 0, 0)
+const date = new Date()
 const description = `// ==UserScript==
 // @name         裁之刃-无
 // @namespace    com.littelearphone.nihility
-// @version      0.0.1
+// @version      ${date.getFullYear()}.${date.getMonth()}.${((date.getTime() - monthStart.getTime()) / 1000).toFixed(0)}
 // @description  群体攻击技能
 // @author       littelearphone
-// @require      https://cdn.bootcdn.net/ajax/libs/jquery/3.6.0/jquery.min.js
-// @include      *
+// @downloadURL  http://10.19.166.83:36100/watcher-backend/nihility.umd.user.js
+// @updateURL    http://10.19.166.83:36100/watcher-backend/nihility.umd.user.js
+// @require      https://code.jquery.com/jquery-3.7.1.slim.min.js
+// @include      /https?://www.baidu.com/s[?].*/
+// @include      /https?://(cn|www).bing.com/search[?].*/
+// @include      /https?://blog.csdn.net/[^/]+/article/details/.*/
 // @grant        GM.setValue
 // @grant        GM_setValue
 // @grant        GM.getValue
@@ -19,33 +27,62 @@ const description = `// ==UserScript==
 // @run-at       document-start
 // ==/UserScript==
 `
-const css = rawCss => `(function() {GM_addStyle(${JSON.stringify(rawCss)})})();\n`
-export default defineConfig({
-  plugins: [vue()],
-  build: {
-    lib: {
-      name: 'nihility',
-      formats: ['umd'],
-      entry: 'src/main.js',
-      fileName: () => 'nihility.user.js'
+const inlineCss = rawCss => `(function () {
+  function insertCommonStyle() {
+    const id = 'nihility.common.style'
+    if (document.getElementById(id)) {
+      return requestAnimationFrame(insertCommonStyle)
+    }
+    const styleElement = (function () {
+      const element = document.createElement('style')
+      document.head.appendChild(element)
+      element.id = id
+      return element
+    })()
+    styleElement.innerHTML = ${JSON.stringify(rawCss)}
+    return requestAnimationFrame(insertCommonStyle)
+  }
+  return requestAnimationFrame(insertCommonStyle)
+})();\n`
+export default defineConfig(({ mode }) => {
+  return {
+    plugins: [vue()],
+    define: {
+      'process.env.NODE_ENV': JSON.stringify(mode),
     },
-    rollupOptions: {
-      plugins: [
-        {
-          apply: 'build',
-          enforce: 'post',
-          name: 'pack-css',
-          generateBundle(opts, bundle) {
-            const {
-              [`style.css`]: { source: rawCss },
-              [`nihility.user.js`]: component
-            } = bundle
-            component.code = description + css(rawCss) + component.code
-            // remove from final bundle
-            delete bundle[`style.css`]
+    css: {
+      preprocessorOptions: {
+        scss: { api: 'modern-compiler' }
+      }
+    },
+    build: {
+      lib: {
+        name: 'nihility',
+        formats: ['umd'],
+        entry: 'src/main.js',
+        fileName: () => 'nihility.umd.user.js'
+      },
+      rollupOptions: {
+        plugins: [
+          {
+            apply: 'build',
+            enforce: 'post',
+            name: 'pack-css',
+            generateBundle(opts, bundle) {
+              const {
+                [`style.css`]: { source: rawCss },
+                [`nihility.umd.user.js`]: component
+              } = bundle
+              component.code = description + inlineCss(rawCss) + component.code
+              // remove from final bundle
+              delete bundle[`style.css`]
+            }
           }
-        }
-      ]
+        ]
+      }
+    },
+    server: {
+      port: 4567
     }
   }
 })
