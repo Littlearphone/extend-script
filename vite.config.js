@@ -11,10 +11,11 @@ const description = `// ==UserScript==
 // @version      ${date.getFullYear()}.${date.getMonth()}.${((date.getTime() - monthStart.getTime()) / 1000).toFixed(0)}
 // @description  群体攻击技能
 // @author       littelearphone
-// @downloadURL  http://10.19.166.83:36100/watcher-backend/nihility.umd.user.js
-// @updateURL    http://10.19.166.83:36100/watcher-backend/nihility.umd.user.js
+// @downloadURL  http://localhost/nihility.umd.user.js
+// @updateURL    http://localhost/nihility.umd.user.js
 // @require      https://code.jquery.com/jquery-3.7.1.slim.min.js
 // @include      /https?://www.baidu.com/s[?].*/
+// @include      /https?://www.bilibili.com/video/BV.*/
 // @include      /https?://(cn|www).bing.com/search[?].*/
 // @include      /https?://blog.csdn.net/[^/]+/article/details/.*/
 // @grant        GM.setValue

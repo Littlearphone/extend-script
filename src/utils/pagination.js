@@ -14,16 +14,24 @@ export class Pagination {
     document.removeEventListener('scroll', this.listener)
   }
 
-  scrollListener(event) {
-    if (top.window.innerHeight >= top.document.body.scrollHeight) {
-      return this.offScrollListener() || this.nextPage()
+  isPageBottom() {
+    const body = top.document.body
+    const innerHeight = top.innerHeight || top.document.documentElement.clientHeight
+    if (innerHeight >= body.clientHeight || innerHeight >= body.scrollHeight) {
+      return true
     }
-    if (top.window.innerHeight + top.window.scrollY >= top.document.body.scrollHeight - PRELOAD_MARGIN) {
+    if (innerHeight + top.scrollY >= body.scrollHeight - PRELOAD_MARGIN) {
+      return true
+    }
+  }
+
+  scrollListener() {
+    if (this.isPageBottom()) {
       return this.offScrollListener() || this.nextPage()
     }
   }
 
   nextPage() {
-
+    return true
   }
 }

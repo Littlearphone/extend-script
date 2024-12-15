@@ -17,7 +17,9 @@ function loadModule(module) {
     }
     document.body.setAttribute(location.hostname.replaceAll('.', '-'), '')
     const dataId = 'nihility-entry'
-    document.body.innerHTML += `<div data-id="${dataId}"></div>`
+    const nihilityEntry = document.createElement('div')
+    nihilityEntry.setAttribute('data-id', dataId)
+    document.body.appendChild(nihilityEntry)
     createApp(MAPPINGS[module]).mount(`[data-id="${dataId}"]`)
   }
 

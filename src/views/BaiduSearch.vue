@@ -1,74 +1,184 @@
 <template>
-  <div class="nihility-config-button" @pointerup="handleClickSettings">设置</div>
-  <div class="nihility-config-panel"></div>
+  <Settings
+    panel-width="300px"
+    panel-height="300px"
+    ref="settingsElement"
+    v-if="!isNestedWindow"
+    @mounted="handleSettingsMounted"
+  >
+    <div class="nihility-config-item">
+      <Switch label="注入配置" v-model="injectConfig"/>
+    </div>
+    <div class="nihility-config-item" v-if="injectConfig">
+      <Switch label="自动翻页" v-model="autoPaging"/>
+    </div>
+    <div class="nihility-config-item" v-if="injectConfig">
+      <Upload label="背景图片" @change="handleImageChange" @clear="handleImageClear" :thumbnail="background"/>
+    </div>
+    <div class="nihility-config-item" v-if="injectConfig">
+      <Slider label="背景模糊" v-model="bgBlur" max="50">
+        <template #tips="{value}">
+          <div class="slider-tips">{{ value }} px</div>
+        </template>
+      </Slider>
+    </div>
+  </Settings>
 </template>
 <script setup>
-import { onMounted } from 'vue'
+import { toBase64 } from '../utils'
+import Switch from '../components/Switch.vue'
+import Upload from '../components/Upload.vue'
+import Slider from '../components/Slider.vue'
 import { loading } from '../utils/loading.js'
+import Settings from '../components/Settings.vue'
 import { Pagination } from '../utils/pagination.js'
-import { makeDraggable, toggleConfigPanel } from '../utils/index.js'
+import { nextTick, onMounted, reactive, ref, shallowRef, watch } from 'vue'
+import { addGlobalDraggableElement, DraggableElement } from '../utils/draggable.js'
 
-function handleClickSettings(e) {
-  const state = e.target.state
-  if (state.dragging) {
-    return
-  }
-  toggleConfigPanel()
-}
-
-function detectAD() {
-  requestAnimationFrame(detectAD)
-  document.querySelectorAll('[data-placeid]:has([data-tuiguang])').forEach(item => item.remove())
-}
+const CONFIG_KEY = 'baidu-hack-config'
 
 class BaiduPagination extends Pagination {
   nextPage() {
-    const pagination = this
+    if (!injectConfig.value || !autoPaging.value) {
+      return logger.warn('该站点自动翻页未启用')
+    }
     const nextPageLink = document.querySelector('#page strong + a')
-    if (nextPageLink) {
-      const mask = loading.mask({})
-      const frameElement = top.document.createElement('iframe')
-      frameElement.setAttribute('ref', 'noreferer')
-      frameElement.setAttribute('scrolling', 'no')
-      frameElement.onload = function () {
-        mask.remove()
-        const frameDocument = frameElement.contentWindow.document
-        frameElement.style.height = frameDocument.documentElement.scrollHeight + 'px'
-        const frames = top.document.querySelectorAll('.nihility-frame')
-        const nestedPage = frameDocument.querySelector('.result-molecule:has(#page)')
-        if (nestedPage) {
-          frames[frames.length - 1].after(nestedPage)
-          pagination.onScrollListener()
-        }
-      }
-      frameElement.classList.add('nihility-frame')
-      frameElement.src = nextPageLink.href
-      const pager = top.document.querySelector('.result-molecule:has(#page)')
-      if (pager) {
-        pager.after(frameElement)
-        pager.remove()
-        const frameRect = frameElement.getBoundingClientRect()
-        mask.update({
-          layerStyle: {
-            width: '100%',
-            backdropFilter: 'none',
-            backgroundColor: 'white',
-            height: `${frameRect.height}px`,
-            top: `${frameElement.offsetTop}px`,
-          }
-        }).start()
+    if (!nextPageLink) {
+      return true
+    }
+    const mask = loading.mask({})
+    const frameElement = top.document.createElement('iframe')
+    frameElement.setAttribute('ref', 'noreferer')
+    frameElement.setAttribute('scrolling', 'no')
+    frameElement.onload = function () {
+      mask.remove()
+      const frameDocument = frameElement.contentWindow.document
+      frameElement.style.height = frameDocument.documentElement.scrollHeight + 'px'
+      const frames = top.document.querySelectorAll('.nihility-frame')
+      const nestedPage = frameDocument.querySelector('.result-molecule:has(#page)')
+      if (nestedPage) {
+        frames[frames.length - 1].after(nestedPage)
       }
     }
+    frameElement.classList.add('nihility-frame')
+    frameElement.src = nextPageLink.href
+    const pager = top.document.querySelector('.result-molecule:has(#page)')
+    if (pager) {
+      const frameWrapper = top.document.createElement('div')
+      frameWrapper.classList.add('nihility-frame-wrapper')
+      frameWrapper.appendChild(frameElement)
+      pager.after(frameWrapper)
+      pager.remove()
+      const frameRect = frameElement.getBoundingClientRect()
+      mask.update({
+        selector: frameWrapper,
+        layerStyle: {
+          width: '100%',
+          backdropFilter: 'none',
+          backgroundColor: 'white',
+          height: `${frameRect.height}px`,
+          top: `${frameElement.offsetTop}px`,
+        }
+      }).start()
+    }
+    return true
+  }
+}
+
+const isNestedWindow = ref(document.querySelector('body[nested-window]'))
+const config = reactive(JSON.parse(GM_getValue(CONFIG_KEY, '{}')))
+const injectConfig = ref(config.injectConfig || false)
+const autoPaging = ref(config.autoPaging || false)
+const background = ref(config.background || '')
+const bgBlur = ref(config.bgBlur || 0)
+const pagination = shallowRef(new BaiduPagination())
+const settingsElement = shallowRef()
+
+watch(injectConfig, value => {
+  config.injectConfig = value
+  GM_setValue(CONFIG_KEY, JSON.stringify(Object.assign({}, config)))
+  nextTick(() => top.location.reload())
+})
+watch(autoPaging, value => {
+  config.autoPaging = value
+  pagination.value.scrollListener()
+  GM_setValue(CONFIG_KEY, JSON.stringify(Object.assign({}, config)))
+})
+watch(background, value => {
+  config.background = value
+  setBodyBackground(value)
+  GM_setValue(CONFIG_KEY, JSON.stringify(Object.assign({}, config)))
+})
+watch(bgBlur, value => {
+  config.bgBlur = value
+  GM_setValue(CONFIG_KEY, JSON.stringify(Object.assign({}, config)))
+})
+
+async function handleImageChange(files) {
+  background.value = await toBase64(files[0])
+}
+
+function handleImageClear() {
+  background.value = ''
+}
+
+function setBodyBackground(image) {
+  if (image) {
+    document.body.style.setProperty('--baidu-background-image', `url(${image})`)
+  }
+}
+
+function reactiveHandler() {
+  const adList = document.querySelectorAll('[data-placeid]:has([data-tuiguang])')
+  if (!adList.length) {
+    return requestAnimationFrame(reactiveHandler)
+  }
+  adList.forEach(item => item.remove())
+}
+
+let pagingTimer
+
+function detectHeight() {
+  if (pagingTimer) {
+    clearTimeout(pagingTimer)
+  }
+  if (pagination.value.isPageBottom() && !document.querySelector('.nihility-frame .tuner-loading-layer')) {
+    pagination.value.scrollListener()
+  }
+  pagingTimer = setTimeout(detectHeight, 300)
+}
+
+class BaiduSettingsButton extends DraggableElement {
+  dragFinish() {
+    settingsElement.value.updatePosition()
+  }
+}
+
+function handleSettingsMounted() {
+  nextTick(() => {
+    if (isNestedWindow.value) {
+      return
+    }
+    const settingsButton = settingsElement.value.button
+    const bounds = settingsButton.getBoundingClientRect()
+    addGlobalDraggableElement(new BaiduSettingsButton(settingsButton, {
+      initialX: 80,
+      initialY: window.innerHeight - 80 - bounds.height,
+      minX: 0, maxX: window.innerWidth - bounds.width,
+      minY: 0, maxY: window.innerHeight - bounds.height
+    }))
+    settingsElement.value.updatePosition()
+    settingsElement.value.closePanel()
+  })
+  pagination.value.offScrollListener()
+  requestAnimationFrame(detectHeight)
+  if (injectConfig.value && background.value) {
+    setBodyBackground(background.value)
   }
 }
 
 onMounted(() => {
-  detectAD()
-  if (document.querySelector('body[nested-window]')) {
-    return
-  }
-  new BaiduPagination()
-  makeDraggable(document.querySelector('.nihility-config-button'))
+  reactiveHandler()
 })
 </script>
 <style lang="scss">
@@ -80,23 +190,24 @@ html:has([www-baidu-com]) {
     --baidu-background-color: #f6f6f6;
     --baidu-background-blur: 12px;
   }
+
+  .nihility-config-item {
+    .slider-tips {
+      white-space: nowrap;
+    }
+  }
 }
 
 [www-baidu-com] {
-  [data-id="nihility-entry"] {
-    .nihility-config-button {
-      color: #666666;
-      background: white;
-      box-shadow: 0 0 20px #00000066;
+  .nihility-frame-wrapper {
+    &, .nihility-frame {
+      width: 100%;
+      border: none;
+      z-index: 100;
+      position: relative;
     }
   }
 
-  .nihility-frame {
-    width: 100%;
-    border: none;
-    z-index: 100;
-    position: relative;
-  }
 
   #foot,
   .toindex,
@@ -163,6 +274,7 @@ html:has([www-baidu-com]) {
     height: 100%;
     width: 100%;
     content: '';
+    left: 0;
     top: 0;
   }
 
@@ -212,6 +324,10 @@ html:has([www-baidu-com]) {
     .result,
     .result-op {
       position: relative;
+
+      &:has(.cosc-card-content) {
+        display: none !important;
+      }
 
       &:hover {
         background-color: white;
@@ -504,6 +620,7 @@ html:has([www-baidu-com]) {
   }
 
   #page {
+    margin: 0;
     z-index: 1;
     display: flex;
     position: relative;

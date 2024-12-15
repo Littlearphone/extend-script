@@ -1,5 +1,5 @@
 const TEMPLATE = `
-<i class="tuner-loading-layer displayNone">
+<i class="tuner-loading-layer display-none">
   <i class="tuner-loading-wrapper">
     <i class="tuner-loading-block">
       <i class="tuner-loading-path1"></i>
@@ -39,8 +39,10 @@ class LoadingMask {
     }
     if (!this.loaded || !this.loaded.length) {
       this.create()
+    } else {
+      this.loaded.css($.extend({}, this.options.layerStyle))
     }
-    this.loaded.removeClass('displayNone')
+    this.loaded.removeClass('display-none')
     return this
   }
 
@@ -51,7 +53,7 @@ class LoadingMask {
     if (this.countDown > 0) {
       return this
     }
-    this.loaded.addClass('displayNone')
+    this.loaded.addClass('display-none')
     return this
   }
 
