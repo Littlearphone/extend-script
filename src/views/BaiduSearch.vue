@@ -34,6 +34,7 @@ import Settings from '../components/Settings.vue'
 import { Pagination } from '../utils/pagination.js'
 import { nextTick, onMounted, reactive, ref, shallowRef, watch } from 'vue'
 import { addGlobalDraggableElement, DraggableElement } from '../utils/draggable.js'
+import { logger } from '../utils/logger.js'
 
 const CONFIG_KEY = 'baidu-hack-config'
 
@@ -52,9 +53,12 @@ class BaiduPagination extends Pagination {
     frameElement.setAttribute('scrolling', 'no')
     frameElement.onload = function () {
       mask.remove()
+      const frames = top.document.querySelectorAll('iframe.nihility-frame')
+      frames.forEach(frame => {
+        const frameDocument = frame.contentWindow.document
+        frame.style.height = frameDocument.documentElement.scrollHeight + 'px'
+      })
       const frameDocument = frameElement.contentWindow.document
-      frameElement.style.height = frameDocument.documentElement.scrollHeight + 'px'
-      const frames = top.document.querySelectorAll('.nihility-frame')
       const nestedPage = frameDocument.querySelector('.result-molecule:has(#page)')
       if (nestedPage) {
         frames[frames.length - 1].after(nestedPage)
@@ -123,8 +127,8 @@ function handleImageClear() {
 }
 
 function setBodyBackground(image) {
-  if (image) {
-    document.body.style.setProperty('--baidu-background-image', `url(${image})`)
+  if (typeof image === 'string') {
+    top.document.body.style.setProperty('--baidu-background-image', `url('${image}')`)
   }
 }
 
@@ -157,8 +161,9 @@ class BaiduSettingsButton extends DraggableElement {
 function handleSettingsMounted() {
   nextTick(() => {
     if (isNestedWindow.value) {
-      return
+      return logger.debug('百度搜索分页加载完成')
     }
+    logger.debug('初始化百度搜索设置按钮')
     const settingsButton = settingsElement.value.button
     const bounds = settingsButton.getBoundingClientRect()
     addGlobalDraggableElement(new BaiduSettingsButton(settingsButton, {
@@ -172,6 +177,7 @@ function handleSettingsMounted() {
   })
   pagination.value.offScrollListener()
   requestAnimationFrame(detectHeight)
+  logger.debug('注入百度搜索页面背景')
   if (injectConfig.value && background.value) {
     setBodyBackground(background.value)
   }
