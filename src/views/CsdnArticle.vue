@@ -47,6 +47,7 @@ onMounted(() => {
   .passport-login-container,
   .toolbar-menus .active ~ *,
   .option-box:has(.app-qr-box),
+  #csdn-toolbar-profile-nologin,
   .passport-login-tip-container {
     display: none !important;
   }
