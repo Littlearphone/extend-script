@@ -243,6 +243,7 @@ html:has([www-baidu-com]) {
   #bottom_layer.s-isindex-wrap,
   [tpl="ads_b2c_universal_card"],
   [class*='first-item-sub-abs_'],
+  .result-op:has(.wd-ai-index-pc),
   [mu*='.recommend_list.baidu.com'],
   .s_tab_inner [href^='/sf/vsearch'],
   div.result:has([href*='baidu.php']),
