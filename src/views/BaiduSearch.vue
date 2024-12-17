@@ -115,6 +115,7 @@ watch(background, value => {
 })
 watch(bgBlur, value => {
   config.bgBlur = value
+  setBodyBgBlur(value)
   GM_setValue(CONFIG_KEY, JSON.stringify(Object.assign({}, config)))
 })
 
@@ -130,6 +131,10 @@ function setBodyBackground(image) {
   if (typeof image === 'string') {
     top.document.body.style.setProperty('--baidu-background-image', `url('${image}')`)
   }
+}
+
+function setBodyBgBlur(blur) {
+  top.document.body.style.setProperty('--baidu-background-blur', `${blur}px`)
 }
 
 function reactiveHandler() {
@@ -180,6 +185,9 @@ function handleSettingsMounted() {
   logger.debug('注入百度搜索页面背景')
   if (injectConfig.value && background.value) {
     setBodyBackground(background.value)
+  }
+  if (injectConfig.value && bgBlur.value) {
+    setBodyBgBlur(bgBlur.value)
   }
 }
 
