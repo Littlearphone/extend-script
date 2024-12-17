@@ -79,6 +79,7 @@ onMounted(() => {
 
     .slider-track-wrapper {
       flex-grow: 1;
+      padding: 9px 4px;
     }
   }
 

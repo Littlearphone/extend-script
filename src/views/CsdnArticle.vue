@@ -3,30 +3,33 @@
 <script setup>
 import { onMounted } from 'vue'
 
-function unseal() {
-  requestAnimationFrame(unseal)
+function insertHacker() {
+  requestAnimationFrame(insertHacker)
   const loginButton = document.querySelector('.toolbar-btn-login a:not([is-hacked])')
   if (loginButton) {
-    loginButton.innerHTML = `<span class="unseal">解除封印</span>`
+    loginButton.innerHTML = `<span class="unseal">手动解封</span>`
     loginButton.setAttribute('is-hacked', '')
   }
 }
 
+function unseal(e) {
+  if (e.target.closest('.toolbar-btn-login')) {
+    document.οncοntextmenu = document.οncοpy = null
+    logger.info('解除 CSDN 页面限制', () => {
+      logger.debug('执行全文档内容替换')
+      try {
+        document.body.outerHTML = `${document.body.outerHTML}`
+      } catch (e) {
+        logger.error(e)
+      }
+      logger.debug('解锁全文档选择限制')
+    })
+  }
+}
+
 onMounted(() => {
-  document.addEventListener('click', function (e) {
-    if (e.target.closest('.toolbar-btn-login')) {
-      document.οncοntextmenu = document.οncοpy = null
-      logger.info('解除 CSDN 页面限制', () => {
-        logger.debug('执行全文档内容替换')
-        try {
-          document.body.outerHTML = `${document.body.outerHTML}`
-        } catch (e) {
-          logger.error(e)
-        }
-        logger.debug('解锁全文档选择限制')
-      })
-    }
-  })
+  document.addEventListener('click', unseal)
+  requestAnimationFrame(insertHacker)
   requestAnimationFrame(unseal)
 })
 </script>

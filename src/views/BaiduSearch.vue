@@ -18,7 +18,7 @@
     <div class="nihility-config-item" v-if="injectConfig">
       <Slider label="背景模糊" v-model="bgBlur" max="50">
         <template #tips="{value}">
-          <div class="slider-tips">{{ value }} px</div>
+          {{ value }}px
         </template>
       </Slider>
     </div>

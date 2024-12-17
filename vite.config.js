@@ -15,6 +15,9 @@ const description = `// ==UserScript==
 // @updateURL    http://localhost/nihility.umd.user.js
 // @require      https://code.jquery.com/jquery-3.7.1.slim.min.js
 // @include      /https?://www.baidu.com/s[?].*/
+// @include      /https?://zhuanlan.zhihu.com/p/.*/
+// @include      /https?://www.zhihu.com/question/.*/
+// @include      /https?://www.google.com/search[?].*/
 // @include      /https?://www.bilibili.com/video/BV.*/
 // @include      /https?://(cn|www).bing.com/search[?].*/
 // @include      /https?://blog.csdn.net/[^/]+/article/details/.*/
