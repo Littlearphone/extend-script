@@ -17,11 +17,11 @@ const description = `// ==UserScript==
 // @include      /https?://www.baidu.com/s[?].*/
 // @include      /https?://zhuanlan.zhihu.com/p/.*/
 // @include      /https?://www.zhihu.com/question/.*/
-// @include      /https?://blog.51cto.com/u_[^/]+/.*/
 // @include      /https?://www.google.com/search[?].*/
 // @include      /https?://www.bilibili.com/video/BV.*/
 // @include      /https?://(cn|www).bing.com/search[?].*/
 // @include      /https?://stackoverflow.com/questions/.*/
+// @include      /https?://(blog|www).51cto.com/u_[^/]+/.*/
 // @include      /https?://blog.csdn.net/[^/]+/article/details/.*/
 // @include      /https?://developer.baidu.com/article/detail([.]html[?]id=.*|s/.*)/
 // @grant        GM.setValue
