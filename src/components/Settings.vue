@@ -231,10 +231,11 @@ body:not([nested-window]) [data-id="nihility-entry"] {
     transition: 200ms;
     user-select: none;
     position: absolute;
-    transform: scale(0);
     height: fit-content;
     background-color: #fff6;
+    border-radius: 30% 0 30% 0;
     backdrop-filter: blur(10px);
+    transform: scale(0) rotate3d(1, -1, 0, -45deg);
     transform-origin: var(--nihility-config-panel-transform-origin);
 
     .nihility-config-body {
@@ -253,9 +254,10 @@ body:not([nested-window]) [data-id="nihility-entry"] {
     }
 
     &.is-open {
+      border-radius: 0;
       pointer-events: all;
-      transform: scale(1);
       box-shadow: 0 0 20px #00000066;
+      transform: scale(1) rotate3d(0, 0, 0, 0);
     }
   }
 }
