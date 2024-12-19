@@ -21,7 +21,7 @@ const description = `// ==UserScript==
 // @include      /https?://www.bilibili.com/video/BV.*/
 // @include      /https?://(cn|www).bing.com/search[?].*/
 // @include      /https?://blog.csdn.net/[^/]+/article/details/.*/
-// @include      /https?://developer.baidu.com/article/details/.*/
+// @include      /https?://developer.baidu.com/article/detail([.]html[?]id=.*|s/.*)/
 // @grant        GM.setValue
 // @grant        GM_setValue
 // @grant        GM.getValue
