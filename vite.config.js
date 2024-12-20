@@ -24,6 +24,7 @@ const description = `// ==UserScript==
 // @include      /https?://www.51cto.com/article/.+.html/
 // @include      /https?://stackoverflow.com/questions/.*/
 // @include      /https?://blog.csdn.net/[^/]+/article/details/.*/
+// @include      /https?://cloud.tencent.com.cn/developer/information/.*/
 // @include      /https?://developer.baidu.com/article/detail([.]html[?]id=.*|s/.*)/
 // @grant        GM.setValue
 // @grant        GM_setValue
