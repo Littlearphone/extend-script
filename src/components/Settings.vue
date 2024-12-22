@@ -205,6 +205,7 @@ body:not([nested-window]) [data-id="nihility-entry"] {
       background: white;
       position: absolute;
       border-radius: 50%;
+      box-sizing: content-box;
       border: 3px solid transparent;
     }
 

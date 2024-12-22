@@ -11,7 +11,7 @@ function detectLink() {
     return
   }
   requestAnimationFrame(detectLink)
-  const links = document.querySelectorAll('a:not([target="_blank"])')
+  const links = document.querySelectorAll('a:not([target="_blank"]):not([aria-label^="Page"])')
   if (!links || !links.length) {
     return
   }

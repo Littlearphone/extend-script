@@ -6,10 +6,10 @@
     <div class="nihility-config-item" v-if="injectConfig">
       <Switch label="网页全屏" v-model="fullWebScreen"/>
     </div>
-    <div class="nihility-config-item" v-if="injectConfig">
+    <div class="nihility-config-item" v-if="injectConfig && speedAdjustable">
       <Slider label="倍数播放" v-model="playbackRate" step="0.05" min="0.5" max="5">
         <template #tips="{value}">
-          {{ value }}x
+          {{ parseFloat(value).toFixed(2) }}x
         </template>
       </Slider>
     </div>
@@ -28,6 +28,7 @@ const config = reactive(JSON.parse(GM_getValue(CONFIG_KEY, '{}')))
 const injectConfig = ref(config.injectConfig || false)
 const fullWebScreen = ref(config.fullWebScreen || false)
 const playbackRate = ref(config.playbackRate || 1.25)
+const speedAdjustable = ref(true)
 const settingsElement = shallowRef()
 watch(injectConfig, value => {
   config.injectConfig = value
@@ -52,29 +53,69 @@ function fullscreenButtonArea() {
   return document.querySelector(selector)
 }
 
+function playNextVideo(e) {
+  const nextButton = document.querySelector('.bpx-player-ctrl-next')
+  if (!nextButton) {
+    return e.target.removeEventListener('ended', playNextVideo)
+  }
+  if (!document.querySelector('.bpx-player-ctrl-setting-loop input').checked) {
+    nextButton.click()
+  }
+  e.target.removeEventListener('ended', playNextVideo)
+  return detectVideoPlaying()
+}
+
+function listeningVideoFinish() {
+  const video = document.querySelector('video')
+  if (video.ended) {
+    return playNextVideo({ target: video })
+  }
+  video.addEventListener('ended', playNextVideo)
+}
+
+const liveWebFullScreenCounter = ref(500)
+
+function triggerLiveWebFullScreen() {
+  if (!--liveWebFullScreenCounter.value) {
+    return
+  }
+  document.body.classList.add('player-full-win', 'over-hidden', 'hide-aside-area')
+  requestAnimationFrame(triggerLiveWebFullScreen)
+}
+
 function detectVideoPlaying() {
   const video = document.querySelector('video')
   if (!video) {
-    return requestAnimationFrame(detectVideoPlaying)
+    return setTimeout(detectVideoPlaying, 500)
   }
   if (video.paused) {
     logger.debug('视频自动开播', () => console.trace())
     video.play()
+    return setTimeout(detectVideoPlaying, 500)
   }
-  logger.debug('视频倍率调节', () => console.trace())
-  video.playbackRate = playbackRate.value
+  if (document.querySelector('.web-player-icon-roomStatus svg')) {
+    speedAdjustable.value = false
+  }
+  if (speedAdjustable.value && video.playbackRate !== playbackRate.value) {
+    logger.debug('视频倍率调节', () => console.trace())
+    video.playbackRate = playbackRate.value
+    return setTimeout(detectVideoPlaying, 500)
+  }
   if (!fullWebScreen.value) {
-    return
+    return requestAnimationFrame(listeningVideoFinish)
+  }
+  if (location.hostname === 'live.bilibili.com') {
+    logger.debug('启动网页全屏', () => console.trace())
+    return triggerLiveWebFullScreen()
   }
   const buttonArea = fullscreenButtonArea()
-  const fullWebScreenStatus = document.querySelector('.bpx-player-ctrl-web.bpx-state-entered')
-  if (!buttonArea && fullWebScreenStatus) {
-    return
-  }
   if (!buttonArea) {
-    return requestAnimationFrame(detectVideoPlaying)
+    if (document.querySelector('.bpx-player-ctrl-web.bpx-state-entered')) {
+      logger.debug('启动网页全屏', () => console.trace())
+      return requestAnimationFrame(listeningVideoFinish)
+    }
+    return setTimeout(detectVideoPlaying, 500)
   }
-  logger.debug('启动网页全屏', () => console.trace())
   const selector = [
     '.bpx-player-ctrl-web-enter',
     '.squirtle-pagefullscreen-inactive',
@@ -84,9 +125,10 @@ function detectVideoPlaying() {
   fullscreenButton.offsetWidth && fullscreenButton.click()
   const classList = buttonArea.classList
   if (classList.contains('closed') || classList.contains('active') || classList.contains('bpx-state-entered')) {
-    return
+    logger.debug('启动网页全屏', () => console.trace())
+    return requestAnimationFrame(listeningVideoFinish)
   }
-  return requestAnimationFrame(detectVideoPlaying)
+  return setTimeout(detectVideoPlaying, 500)
 }
 
 class BilibiliSettingsButton extends DraggableElement {
@@ -110,9 +152,32 @@ function handleSettingsMounted() {
   })
 }
 
-onMounted(() => {
+function mounted() {
   logger.debug('[]~(￣▽￣)~* 脚本已准备就绪')
-  detectVideoPlaying()
+  if (location.hostname === 'www.bilibili.com' || (location.hostname === 'live.bilibili.com' && location.pathname.length > 1)) {
+    detectVideoPlaying()
+  }
+}
+
+onMounted(() => {
+  mounted()
+  sessionStorage.removeItem('lastVideoSrc')
+  const pushState = unsafeWindow.history.pushState
+  unsafeWindow.history.pushState = function (state, unused, url) {
+    try {
+      return pushState.apply(this, [state, unused, url])
+    } finally {
+      setTimeout(mounted, 2000)
+    }
+  }
+  const replaceState = unsafeWindow.history.replaceState
+  unsafeWindow.history.replaceState = function (state, unused, url) {
+    try {
+      return replaceState.apply(this, [state, unused, url])
+    } finally {
+      setTimeout(mounted, 2000)
+    }
+  }
 })
 </script>
 <style lang="scss" scoped>
@@ -125,7 +190,24 @@ html:has([www-bilibili-com]) {
 }
 </style>
 <style lang="scss">
-body[www-bilibili-com]:has(.mode-webscreen) [data-id=nihility-entry] {
+html:has([live-bilibili-com]) {
+  #sections-vm,
+  #link-footer-vm,
+  .user-info .user-panel ~ *,
+  #main-ctnr div.showmore-link,
+  #main-ctnr div.nav-items-ctnr,
+  .header-info-ctnr .lower-row .right-ctnr {
+    display: none;
+  }
+}
+
+body[www-bilibili-com]:has(.mode-webscreen,[class*=video_playerFullScreen]) [data-id=nihility-entry] {
   display: none;
+}
+
+body[nested-window] {
+  [data-id=nihility-entry] {
+    display: none;
+  }
 }
 </style>
