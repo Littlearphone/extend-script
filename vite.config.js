@@ -14,6 +14,7 @@ const description = `// ==UserScript==
 // @downloadURL  http://localhost/nihility.umd.user.js
 // @updateURL    http://localhost/nihility.umd.user.js
 // @require      https://code.jquery.com/jquery-3.7.1.slim.min.js
+// @include      /https?://juejin.cn/post/.*/
 // @include      /https?://www.baidu.com/s[?].*/
 // @include      /https?://zhuanlan.zhihu.com/p/.*/
 // @include      /https?://www.zhihu.com/question/.*/
