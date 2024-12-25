@@ -12,6 +12,7 @@ if (location.hostname === 'localhost') {
 }
 export const MAPPINGS = {
   'https?://localhost(:\d+)?.*': BilibiliVideo,
+  'https?://juejin.cn/post/.*': SnippetHack,
   'https?://www.baidu.com/s[?].*': BaiduSearch,
   'https?://zhuanlan.zhihu.com/p/.*': ZhihuArticle,
   'https?://blog.51cto.com/u_[^/]+/.*': SnippetHack,
@@ -21,6 +22,8 @@ export const MAPPINGS = {
   'https?://(cn|www).bing.com/search[?].*': BingSearch,
   'https?://www.51cto.com/article/.+.html': SnippetHack,
   'https?://stackoverflow.com/questions/.*': SnippetHack,
+  'https?://jingyan.baidu.com/article/.*.html': BaiduArticle,
   'https?://blog.csdn.net/[^/]+/article/details/.*': CsdnArticle,
+  'https?://cloud.tencent.com.cn/developer/information/.*': SnippetHack,
   'https?://developer.baidu.com/article/detail([.]html[?]id=.*|s/.*)': BaiduArticle,
 }

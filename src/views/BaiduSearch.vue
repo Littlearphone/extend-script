@@ -159,7 +159,7 @@ function detectHeight() {
 
 class BaiduSettingsButton extends DraggableElement {
   dragFinish() {
-    settingsElement.value.updatePosition()
+    nextTick(() => settingsElement.value.updatePosition())
   }
 }
 

@@ -5,6 +5,44 @@
 
 </script>
 <style lang="scss">
+html:has([juejin-cn]) {
+  body[juejin-cn] {
+    .main-nav-list,
+    .chat-assistant,
+    .column-container,
+    .recommended-area,
+    #sidebar-container,
+    div.article-summary,
+    .global-float-banner,
+    .article-suspended-panel,
+    .context-menu:has(.ai-btn),
+    .right-side-nav .vip-entry,
+    .right-side-nav .creator-item,
+    .code-block-extension-headerRight,
+    .suspension-panel > :not(.to-top-btn) {
+      display: none;
+    }
+
+    .main-area.article-area {
+      width: 100%;
+    }
+  }
+}
+
+html:has([cloud-tencent-com-cn]) {
+  body[cloud-tencent-com-cn] {
+    .cdc-footer,
+    .layout-side,
+    .pg-info-introduce ~ *,
+    .cdc-header__bottom-home ~ *,
+    .com-widget-global2__btn:not(.top),
+    #community-top-header-product-container,
+    .cdc-modal__wrap:has(.cdc-activity-modal) {
+      display: none;
+    }
+  }
+}
+
 html:has([www-51cto-com]) {
   body[www-51cto-com] {
     footer,

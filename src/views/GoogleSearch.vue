@@ -15,7 +15,11 @@ function detectLink() {
   if (!links || !links.length) {
     return
   }
-  links.forEach(link => link.setAttribute('target', '_blank'))
+  links.forEach(link => {
+    if (!link.closest('[role="navigation"]:has([role=heading])')) {
+      link.setAttribute('target', '_blank')
+    }
+  })
 }
 
 onMounted(() => {

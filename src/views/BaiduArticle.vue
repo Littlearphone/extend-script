@@ -5,6 +5,50 @@
 
 </script>
 <style lang="scss">
+body[jingyan-baidu-com] {
+  #aside,
+  nav.nav,
+  .footer,
+  #wgt-like,
+  #task-panel-wrap,
+  #exp-article ~ *,
+  #search-box .channel,
+  .wrp-exp-share > :not(#w-gotop) {
+    display: none !important;
+  }
+
+  #main-content {
+    padding: 0;
+    width: 100%;
+
+    .exp-content-container.fold {
+      overflow: auto;
+      max-height: unset;
+
+      .read-whole-mask {
+        display: none !important;
+      }
+    }
+
+    .exp-content-body:not(.exp-brief-step) {
+      a.exp-image-wraper {
+        width: 100%;
+
+        img {
+          width: 100%;
+          max-width: unset;
+          max-height: 80vh;
+          object-fit: contain;
+        }
+      }
+    }
+  }
+
+  header .article-header {
+    height: auto;
+  }
+}
+
 body[developer-baidu-com] {
   padding-top: 64px;
 
