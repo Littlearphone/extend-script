@@ -1,10 +1,39 @@
 <template>
-
 </template>
 <script setup lang="ts">
-
 </script>
 <style lang="scss">
+html:has([www-360doc-com]) {
+  body[www-360doc-com] {
+    .floatqrcode,
+    .article_showall,
+    #goTop2 #fxbtn_ai,
+    .gzhxcjh_entrance,
+    #goTop2 #fxbtn_ai ~ *,
+    #registerOrLoginLayer,
+    .mod__:has(.ul-similar),
+    #registerOrLoginLayer ~ *,
+    .doc360article_content .a_right {
+      display: none !important;
+    }
+
+    .a_left:has(#bgchange) {
+      &, #bgchange, #articlecontent {
+        width: 100%;
+        box-sizing: border-box;
+      }
+
+      #articlecontent {
+        height: fit-content;
+
+        table {
+          width: 100% !important;
+        }
+      }
+    }
+  }
+}
+
 html:has([juejin-cn]) {
   body[juejin-cn] {
     .main-nav-list,

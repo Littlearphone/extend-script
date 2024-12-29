@@ -1,11 +1,12 @@
+import DouyuLive from '../views/DouyuLive.vue'
 import BingSearch from '../views/BingSearch.vue'
 import BaiduSearch from '../views/BaiduSearch.vue'
 import CsdnArticle from '../views/CsdnArticle.vue'
+import SnippetHack from '../views/SnippetHack.vue'
 import BaiduArticle from '../views/BaiduArticle.vue'
 import GoogleSearch from '../views/GoogleSearch.vue'
 import ZhihuArticle from '../views/ZhihuArticle.vue'
 import BilibiliVideo from '../views/BilibiliVideo.vue'
-import SnippetHack from '../views/SnippetHack.vue'
 
 if (location.hostname === 'localhost') {
   document.body.setAttribute('www-baidu-com', '')
@@ -22,8 +23,10 @@ export const MAPPINGS = {
   'https?://(cn|www).bing.com/search[?].*': BingSearch,
   'https?://www.51cto.com/article/.+.html': SnippetHack,
   'https?://stackoverflow.com/questions/.*': SnippetHack,
+  'https?://www.360doc.com/content/.*.shtml': SnippetHack,
   'https?://jingyan.baidu.com/article/.*.html': BaiduArticle,
   'https?://blog.csdn.net/[^/]+/article/details/.*': CsdnArticle,
+  'https?://www.douyu.com/([0-9]+|topic/.*[?]rid=[0-9]+)': DouyuLive,
   'https?://cloud.tencent.com.cn/developer/information/.*': SnippetHack,
   'https?://developer.baidu.com/article/detail([.]html[?]id=.*|s/.*)': BaiduArticle,
 }

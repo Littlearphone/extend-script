@@ -25,8 +25,10 @@ const description = `// ==UserScript==
 // @include      /https?://(cn|www).bing.com/search[?].*/
 // @include      /https?://www.51cto.com/article/.+.html/
 // @include      /https?://stackoverflow.com/questions/.*/
+// @include      /https?://www.360doc.com/content/.*.shtml/
 // @include      /https?://jingyan.baidu.com/article/.*.html/
 // @include      /https?://blog.csdn.net/[^/]+/article/details/.*/
+// @include      /https?://www.douyu.com/([0-9]+|topic/.*[?]rid=[0-9]+)/
 // @include      /https?://cloud.tencent.com.cn/developer/information/.*/
 // @include      /https?://developer.baidu.com/article/detail([.]html[?]id=.*|s/.*)/
 // @grant        GM.setValue

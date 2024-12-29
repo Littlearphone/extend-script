@@ -88,6 +88,9 @@ function detectVideoPlaying() {
   if (!video) {
     return setTimeout(detectVideoPlaying, 500)
   }
+  if (video.closest('#hot_module_player')) {
+    return
+  }
   if (video.paused) {
     logger.debug('视频自动开播', () => console.trace())
     video.play()
@@ -152,10 +155,21 @@ function handleSettingsMounted() {
   })
 }
 
+function detectTemporaryPlaying() {
+  const app = document.querySelector('#app:has(.header-login-entry):has(.bpx-state-paused)')
+  const loginClose = document.querySelector('.bili-mini-mask:has(.login-agreement-wp) .bili-mini-close-icon')
+  if (!app || !loginClose) {
+    return setTimeout(detectTemporaryPlaying, 500)
+  }
+  detectVideoPlaying()
+  loginClose.click()
+}
+
 function mounted() {
   logger.debug('[]~(￣▽￣)~* 脚本已准备就绪')
   if (location.hostname === 'www.bilibili.com' || (location.hostname === 'live.bilibili.com' && location.pathname.length > 1)) {
     detectVideoPlaying()
+    detectTemporaryPlaying()
   }
 }
 
