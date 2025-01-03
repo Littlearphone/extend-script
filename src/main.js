@@ -15,7 +15,7 @@ function loadModule(module) {
     if (top !== window) {
       document.body.setAttribute('nested-window', '')
     }
-    document.body.setAttribute(location.hostname.replaceAll('.', '-'), '')
+    document.body.setAttribute(location.hostname.replaceAll('[.]', '-'), '')
     const dataId = 'nihility-entry'
     const nihilityEntry = document.createElement('div')
     nihilityEntry.setAttribute('data-id', dataId)

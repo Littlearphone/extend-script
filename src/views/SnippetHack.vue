@@ -1,8 +1,57 @@
 <template>
 </template>
-<script setup lang="ts">
+<script setup>
+import { onMounted } from 'vue'
+
+onMounted(() => {
+  if (location.hostname === 'www.jb51.net') {
+    // TODO 解除复制限制
+  }
+})
 </script>
 <style lang="scss">
+html:has([www-jb51-net]) {
+  body[www-jb51-net] {
+    #ewm,
+    #nav,
+    .xbtj,
+    .art_xg,
+    #footer,
+    #topbar,
+    .xgcomm,
+    #submenu,
+    .catalogue,
+    .main-right,
+    #header #logo ~ *,
+    #container > div:has(#txtlink) {
+      display: none;
+    }
+
+    .codetool {
+      display: none !important;
+    }
+
+    .code {
+      user-select: text;
+    }
+
+    .main-left {
+      width: 100% !important;
+    }
+
+    #CatelogList {
+      padding: 1em;
+      width: auto !important;
+      background-color: white;
+      box-shadow: 0 0 10px 2px #0005;
+    }
+
+    #navCategory .first_class_ul {
+      display: unset !important;
+    }
+  }
+}
+
 html:has([www-360doc-com]) {
   body[www-360doc-com] {
     .floatqrcode,
