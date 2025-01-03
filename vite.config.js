@@ -16,6 +16,7 @@ const description = `// ==UserScript==
 // @require      https://code.jquery.com/jquery-3.7.1.slim.min.js
 // @include      /https?://juejin.cn/post/.*/
 // @include      /https?://www.baidu.com/s[?].*/
+// @include      /https?://www.jb51.net/.*.html?/
 // @include      /https?://zhuanlan.zhihu.com/p/.*/
 // @include      /https?://www.zhihu.com/question/.*/
 // @include      /https?://blog.51cto.com/u_[^/]+/.*/
