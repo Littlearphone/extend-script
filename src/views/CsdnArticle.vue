@@ -37,6 +37,7 @@ onMounted(() => {
 [blog-csdn-net] {
   .recommend-box,
   div[id$=Advert],
+  .toolbar-advert,
   .toolbox-middle,
   .recommend-right,
   #articleSearchTip,
