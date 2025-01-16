@@ -11,8 +11,8 @@ const description = `// ==UserScript==
 // @version      ${date.getFullYear()}.${date.getMonth()}.${((date.getTime() - monthStart.getTime()) / 1000).toFixed(0)}
 // @description  群体攻击技能
 // @author       littelearphone
-// @downloadURL  http://localhost/nihility.umd.user.js
-// @updateURL    http://localhost/nihility.umd.user.js
+// @downloadURL  http://10.19.166.83:36100/watcher-backend/nihility.umd.user.js
+// @updateURL    http://10.19.166.83:36100/watcher-backend/nihility.umd.user.js
 // @require      https://code.jquery.com/jquery-3.7.1.slim.min.js
 // @include      /https?://juejin.cn/post/.*/
 // @include      /https?://www.baidu.com/s[?].*/
@@ -46,7 +46,7 @@ const inlineCss = rawCss => `(function () {
   function insertCommonStyle() {
     const id = 'nihility.common.style'
     if (document.getElementById(id)) {
-      return requestAnimationFrame(insertCommonStyle)
+      return setTimeout(insertCommonStyle, 100)
     }
     const styleElement = (function () {
       const element = document.createElement('style')
@@ -55,9 +55,9 @@ const inlineCss = rawCss => `(function () {
       return element
     })()
     styleElement.innerHTML = ${JSON.stringify(rawCss)}
-    return requestAnimationFrame(insertCommonStyle)
+    return setTimeout(insertCommonStyle, 100)
   }
-  return requestAnimationFrame(insertCommonStyle)
+  return setTimeout(insertCommonStyle, 100)
 })();\n`
 export default defineConfig(({ mode }) => {
   return {
