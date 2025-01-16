@@ -224,6 +224,7 @@ html:has([www-baidu-com]) {
 
 
   #foot,
+  #top-ad,
   .toindex,
   div.c-tools,
   div#searchTag,
