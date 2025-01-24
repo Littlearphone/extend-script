@@ -73,14 +73,50 @@ function listeningVideoFinish() {
   video.addEventListener('ended', playNextVideo)
 }
 
-const liveWebFullScreenCounter = ref(500)
-
 function triggerLiveWebFullScreen() {
-  if (!--liveWebFullScreenCounter.value) {
-    return
+  if (document.querySelector('.player-full-win')) {
+    return true
   }
-  document.body.classList.add('player-full-win', 'over-hidden', 'hide-aside-area')
-  requestAnimationFrame(triggerLiveWebFullScreen)
+  const video = document.querySelector('video')
+  video.dispatchEvent(new MouseEvent('mousemove', { bubbles: true }))
+  const fullWebScreen = document.querySelector('.web-player-controller-wrap .right-area .tip-wrap:nth-child(2) svg')
+  if (fullWebScreen) {
+    fullWebScreen.dispatchEvent(new MouseEvent('click', { bubbles: true }))
+  }
+  // document.body.classList.add('player-full-win', 'over-hidden', 'hide-aside-area')
+  return setTimeout(triggerLiveWebFullScreen, 100)
+}
+
+function triggerLiveHideRoomAside() {
+  if (document.querySelector('.player-full-win.hide-aside-area')) {
+    return true
+  }
+  const asideButton = document.querySelector('.player-full-win #aside-area-toggle-btn')
+  if (asideButton && !document.querySelector('.hide-aside-area')) {
+    asideButton.click()
+  }
+  return setTimeout(triggerLiveHideRoomAside, 100)
+}
+
+function triggerLiveQualityOriginal() {
+  const selectedQuality = document.querySelector('.quality-wrap .selected-qn')
+  if (!selectedQuality) {
+    const video = document.querySelector('video')
+    video.dispatchEvent(new MouseEvent('mousemove', { bubbles: true }))
+    return setTimeout(triggerLiveQualityOriginal, 100)
+  }
+  if (selectedQuality.innerText.trim() === '原画') {
+    return true
+  }
+  const asideButton = document.querySelector('.web-player-controller-wrap .right-area .quality-wrap .list-it')
+  if (asideButton) {
+    asideButton.dispatchEvent(new MouseEvent('click', { bubbles: true }))
+    if (asideButton.innerText.trim() !== '原画') {
+      return true
+    }
+  }
+  selectedQuality.dispatchEvent(new MouseEvent('mouseenter', { bubbles: true }))
+  return setTimeout(triggerLiveQualityOriginal, 100)
 }
 
 function detectVideoPlaying() {
@@ -105,17 +141,20 @@ function detectVideoPlaying() {
     return setTimeout(detectVideoPlaying, 500)
   }
   if (!fullWebScreen.value) {
-    return requestAnimationFrame(listeningVideoFinish)
+    return setTimeout(listeningVideoFinish, 100)
   }
   if (location.hostname === 'live.bilibili.com') {
+    if (document.querySelector('#room-card-list')) {
+      return
+    }
     logger.debug('启动网页全屏', () => console.trace())
-    return triggerLiveWebFullScreen()
+    return triggerLiveWebFullScreen() && triggerLiveHideRoomAside() && triggerLiveQualityOriginal()
   }
   const buttonArea = fullscreenButtonArea()
   if (!buttonArea) {
     if (document.querySelector('.bpx-player-ctrl-web.bpx-state-entered')) {
       logger.debug('启动网页全屏', () => console.trace())
-      return requestAnimationFrame(listeningVideoFinish)
+      return setTimeout(listeningVideoFinish, 100)
     }
     return setTimeout(detectVideoPlaying, 500)
   }
@@ -129,7 +168,7 @@ function detectVideoPlaying() {
   const classList = buttonArea.classList
   if (classList.contains('closed') || classList.contains('active') || classList.contains('bpx-state-entered')) {
     logger.debug('启动网页全屏', () => console.trace())
-    return requestAnimationFrame(listeningVideoFinish)
+    return setTimeout(listeningVideoFinish, 100)
   }
   return setTimeout(detectVideoPlaying, 500)
 }
@@ -165,11 +204,24 @@ function detectTemporaryPlaying() {
   loginClose.click()
 }
 
+function createCollapseButton() {
+  const publishSection = document.querySelector('section:has(.bili-dyn-publishing)')
+  if (!publishSection) {
+    return setTimeout(createCollapseButton, 100)
+  }
+  const node = document.createElement('div')
+  node.classList.add('collapse-button', 'is-collapsed')
+  node.onclick = () => node.classList.toggle('is-collapsed')
+  publishSection.appendChild(node)
+}
+
 function mounted() {
   logger.debug('[]~(￣▽￣)~* 脚本已准备就绪')
   if (location.hostname === 'www.bilibili.com' || (location.hostname === 'live.bilibili.com' && location.pathname.length > 1)) {
     detectVideoPlaying()
     detectTemporaryPlaying()
+  } else if (location.hostname === 't.bilibili.com') {
+    return setTimeout(createCollapseButton, 100)
   }
 }
 
@@ -194,16 +246,83 @@ onMounted(() => {
   }
 })
 </script>
-<style lang="scss" scoped>
+<style lang="scss">
 html:has([www-bilibili-com]) {
+  .floor-single-card,
+  .desktop-download-tip,
+  .recommended-swipe ~ .bili-video-card:not(.enable-no-interest) {
+    display: none;
+  }
+
   .nihility-config-item {
     .slider-tips {
       white-space: nowrap;
     }
   }
 }
-</style>
-<style lang="scss">
+
+html:has([t-bilibili-com]) {
+  body[t-bilibili-com] {
+    [data-id=nihility-entry],
+    section:has(.bili-dyn-banner) {
+      display: none;
+    }
+
+    section:has(.bili-dyn-publishing) {
+      position: relative;
+
+      .collapse-button {
+        left: 0;
+        right: 0;
+        width: 24px;
+        bottom: -4px;
+        height: 12px;
+        margin: 0 auto;
+        cursor: pointer;
+        position: absolute;
+        border-radius: 4px;
+        align-items: center;
+        display: inline-flex;
+        justify-content: center;
+        backdrop-filter: blur(8px);
+        background-color: transparent;
+        box-shadow: 0 0 10px 2px #4444;
+
+        &::before {
+          content: '';
+          margin-bottom: 6px;
+          display: inline-block;
+          border: 6px solid transparent;
+          border-bottom: 6px solid #0005;
+        }
+
+        &.is-collapsed::before {
+          margin-top: 8px;
+          margin-bottom: 0;
+          border-top: 6px solid #0005;
+          border-bottom: 6px solid transparent;
+        }
+      }
+
+      &:has(.is-collapsed) {
+        margin: 0;
+        overflow: visible;
+
+        .bili-dyn-publishing {
+          height: 0;
+          padding: 0;
+          overflow: hidden;
+        }
+
+        .collapse-button {
+          z-index: 1;
+          bottom: -12px;
+        }
+      }
+    }
+  }
+}
+
 html:has([live-bilibili-com]) {
   #sections-vm,
   #link-footer-vm,
@@ -215,8 +334,15 @@ html:has([live-bilibili-com]) {
   }
 }
 
-body[www-bilibili-com]:has(.mode-webscreen,[class*=video_playerFullScreen]) [data-id=nihility-entry] {
-  display: none;
+body[www-bilibili-com],
+body[live-bilibili-com] {
+  &.player-full-win,
+  &:has([class*='video_playerFullScreen__']),
+  &:has(.mode-webscreen,[class*=video_playerFullScreen]) {
+    [data-id=nihility-entry] {
+      display: none;
+    }
+  }
 }
 
 body[nested-window] {
