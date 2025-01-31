@@ -17,6 +17,7 @@ const description = `// ==UserScript==
 // @include      /https?://t.bilibili.com/.*/
 // @include      /https?://juejin.cn/post/.*/
 // @include      /https?://www.baidu.com/s[?].*/
+// @include      /https?://tieba.baidu.com/p/.*/
 // @include      /https?://www.jb51.net/.*.html?/
 // @include      /https?://zhuanlan.zhihu.com/p/.*/
 // @include      /https?://www.zhihu.com/question/.*/
@@ -85,13 +86,14 @@ export default defineConfig(({ mode }) => {
             enforce: 'post',
             name: 'pack-css',
             generateBundle(opts, bundle) {
+              // console.log(opts, bundle)
               const {
-                [`style.css`]: { source: rawCss },
+                [`nihility-script.css`]: { source: rawCss },
                 [`nihility.umd.user.js`]: component
               } = bundle
               component.code = description + inlineCss(rawCss) + component.code
               // remove from final bundle
-              delete bundle[`style.css`]
+              delete bundle[`nihility-script.css`]
             }
           }
         ]

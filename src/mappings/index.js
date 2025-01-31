@@ -16,6 +16,7 @@ export const MAPPINGS = {
   'https?://juejin.cn/post/.*': SnippetHack,
   'https?://t.bilibili.com/.*': BilibiliVideo,
   'https?://www.baidu.com/s[?].*': BaiduSearch,
+  'https?://tieba.baidu.com/p/.*': BaiduArticle,
   'https?://www.jb51.net/.*.html?': SnippetHack,
   'https?://zhuanlan.zhihu.com/p/.*': ZhihuArticle,
   'https?://blog.51cto.com/u_[^/]+/.*': SnippetHack,

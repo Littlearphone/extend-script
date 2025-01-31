@@ -5,6 +5,32 @@
 
 </script>
 <style lang="scss">
+body[tieba-baidu-com] {
+  .right_section,
+  .tbui_aside_float_bar,
+  #tiebaCustomPassLogin {
+    display: none !important;
+  }
+
+  .pb_content {
+    display: flex;
+    justify-content: center;
+  }
+
+  .tb_rich_poster {
+    margin-inline: 20px;
+
+    .old_style_wrapper {
+      width: 100%;
+      box-sizing: border-box;
+
+      .edui-container {
+        width: 100% !important;
+      }
+    }
+  }
+}
+
 body[jingyan-baidu-com] {
   #aside,
   nav.nav,

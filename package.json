@@ -11,10 +11,10 @@
     "vue": "latest"
   },
   "devDependencies": {
-    "@vitejs/plugin-vue": "5.1.2",
-    "ssh2-sftp-client": "^11.0.0",
+    "@vitejs/plugin-vue": "latest",
+    "ssh2-sftp-client": "latest",
     "moment": "latest",
     "sass": "latest",
-    "vite": "5.4.6"
+    "vite": "latest"
   }
 }
