@@ -213,6 +213,8 @@ html:has([www-baidu-com]) {
 }
 
 [www-baidu-com] {
+  min-height: auto;
+
   .nihility-frame-wrapper {
     &, .nihility-frame {
       width: 100%;
@@ -221,7 +223,6 @@ html:has([www-baidu-com]) {
       position: relative;
     }
   }
-
 
   #foot,
   #top-ad,
