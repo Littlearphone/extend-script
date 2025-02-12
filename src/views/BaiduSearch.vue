@@ -66,7 +66,7 @@ class BaiduPagination extends Pagination {
     }
     frameElement.classList.add('nihility-frame')
     frameElement.src = nextPageLink.href
-    const pager = top.document.querySelector('.result-molecule:has(#page)')
+    const pager = top.document.querySelector('.result-molecule:has(#page), #page')
     if (pager) {
       const frameWrapper = top.document.createElement('div')
       frameWrapper.classList.add('nihility-frame-wrapper')
@@ -231,6 +231,7 @@ html:has([www-baidu-com]) {
   div#searchTag,
   #container #rs,
   #s_side_wrapper,
+  #header_top_bar,
   .tuner-ads-block,
   .new-pmd .c-recommend,
   #s_wrap.s-isindex-wrap,
@@ -326,12 +327,13 @@ html:has([www-baidu-com]) {
       transition: .3s;
       overflow: hidden;
       border-radius: 4px;
+      margin: 0 !important;
       box-sizing: border-box;
-      margin: 10px 0 !important;
       border: 1px solid #ebeef5;
       padding: 0 10px !important;
       background-color: #ffffffaa;
       backdrop-filter: blur(12px);
+      margin-bottom: 8px !important;
     }
 
     &-op .result {
@@ -367,7 +369,7 @@ html:has([www-baidu-com]) {
         &:before {
           margin: 0;
           width: 5px;
-          left: -14px;
+          left: -10px;
           content: '';
           height: 20px;
           border: none;
@@ -455,16 +457,6 @@ html:has([www-baidu-com]) {
     }
   }
 
-  #container {
-    z-index: 1;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    padding: 0 !important;
-    margin: 0 !important;
-    width: auto !important;
-  }
-
   #head {
     display: flex;
     min-height: unset;
@@ -526,7 +518,7 @@ html:has([www-baidu-com]) {
       justify-content: center;
       display: flex !important;
       backdrop-filter: blur(12px);
-      background-color: #ffffff33;
+      background-color: #ffffffb0;
     }
   }
 
@@ -551,12 +543,20 @@ html:has([www-baidu-com]) {
       max-width: 1200px;
       justify-content: center;
       backdrop-filter: blur(12px);
-      background-color: #ffffff33;
     }
   }
 
   div.result-molecule:has(#tsn_inner) {
     margin-bottom: 8px;
+  }
+
+  div[tpl="app/search-tool"] {
+    background-color: #ffffffb0;
+
+    span[class^=hint_],
+    div[class^=options_] {
+      color: #222;
+    }
   }
 
   #u {
@@ -590,7 +590,7 @@ html:has([www-baidu-com]) {
   #content_left,
   .head_nums_cont_outer,
   .head_nums_cont_inner > div {
-    width: 90% !important;
+    width: 100% !important;
     min-width: 800px;
     max-width: 1200px;
   }
@@ -662,6 +662,20 @@ html:has([www-baidu-com]) {
   }
 
   #container {
+    z-index: 1;
+    display: flex;
+    position: relative;
+    flex-direction: column;
+    align-items: center;
+    padding: 0 !important;
+    margin: 0 !important;
+    width: auto !important;
+    
+    #gotoPage {
+      padding: 0 6px;
+      background-color: #fff6;
+    }
+
     &.sam_newgrid {
       #content_left {
         .result-op {
@@ -669,8 +683,9 @@ html:has([www-baidu-com]) {
           background-color: #ffffffaa;
           backdrop-filter: blur(12px);
           box-sizing: border-box;
+          margin-bottom: 8px;
           min-width: 1000px;
-          padding: 10px;
+          padding: 10px 0;
 
           &:hover {
             transition: .3s;
@@ -750,14 +765,15 @@ html:has([www-baidu-com]) {
     text-align: right;
   }
 
-  .newTimeFactor_before_abs,
+  //.newTimeFactor_before_abs,
   .new-pmd span.c-color-gray2 {
-    width: 72px;
-    margin: 0 8px;
+    //width: 72px;
+    padding: 2px 8px;
+    margin-right: 8px;
     text-align: center;
-    color: #409eff !important;
-    border: 1px solid #d9ecff;
-    background-color: #ecf5ff;
+    color: white !important;
+    border: 1px solid #409eff;
+    background-color: #409eff;
   }
 
   div[class*='first-item-title'],
@@ -769,19 +785,16 @@ html:has([www-baidu-com]) {
   .newTimeFactor_before_abs,
   .c-gap-top-small span.c-color-gray2,
   .c-gap-top-middle span.c-color-gray2 {
-    top: 10px;
-    right: 100px;
     padding: 0 8px;
-    position: absolute;
     white-space: nowrap;
     width: fit-content !important;
   }
 
-  .newTimeFactor_before_abs > *,
-  .c-gap-top-small span.c-color-gray2,
-  .c-gap-top-middle span.c-color-gray2 {
-    color: #409eff !important;
-  }
+  //.newTimeFactor_before_abs > *,
+  //.c-gap-top-small span.c-color-gray2,
+  //.c-gap-top-middle span.c-color-gray2 {
+  //  color: white !important;
+  //}
 
   a.kuaizhao,
   [data-click*='snapshot'] {
