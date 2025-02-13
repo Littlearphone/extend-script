@@ -21,6 +21,7 @@ export const MAPPINGS = {
   'https?://zhuanlan.zhihu.com/p/.*': ZhihuArticle,
   'https?://blog.51cto.com/u_[^/]+/.*': SnippetHack,
   'https?://www.zhihu.com/question/.*': ZhihuArticle,
+  'https?://baijiahao.baidu.com/s[?].*': BaiduArticle,
   'https?://www.google.com/search[?].*': GoogleSearch,
   'https?://(www|live).bilibili.com/.*': BilibiliVideo,
   'https?://(cn|www).bing.com/search[?].*': BingSearch,

@@ -22,6 +22,7 @@ const description = `// ==UserScript==
 // @include      /https?://zhuanlan.zhihu.com/p/.*/
 // @include      /https?://www.zhihu.com/question/.*/
 // @include      /https?://blog.51cto.com/u_[^/]+/.*/
+// @include      /https?://baijiahao.baidu.com/s[?].*/
 // @include      /https?://(live|www).bilibili.com/.*/
 // @include      /https?://www.google.com/search[?].*/
 // @include      /https?://www.bilibili.com/video/BV.*/

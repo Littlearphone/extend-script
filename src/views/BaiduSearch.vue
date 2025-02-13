@@ -367,12 +367,11 @@ html:has([www-baidu-com]) {
         border-bottom: 1px solid #ebeef5;
 
         &:before {
-          margin: 0;
           width: 5px;
-          left: -10px;
           content: '';
           height: 20px;
           border: none;
+          margin-right: 8px;
           position: relative;
           border-radius: 2.5px;
           background-color: #2196f3;
@@ -400,6 +399,11 @@ html:has([www-baidu-com]) {
     .c-row > div:not([class*='blog-more-wrap']) {
       margin: 8px 10px;
       top: 0 !important;
+
+      &.c-result-content,
+      &[class*=_aladdin_] {
+        margin: 8px 0;
+      }
     }
 
     div[class*='blog-more-wrap'] {
@@ -670,7 +674,7 @@ html:has([www-baidu-com]) {
     padding: 0 !important;
     margin: 0 !important;
     width: auto !important;
-    
+
     #gotoPage {
       padding: 0 6px;
       background-color: #fff6;
@@ -685,7 +689,7 @@ html:has([www-baidu-com]) {
           box-sizing: border-box;
           margin-bottom: 8px;
           min-width: 1000px;
-          padding: 10px 0;
+          padding: 10px;
 
           &:hover {
             transition: .3s;

@@ -31,6 +31,21 @@ body[tieba-baidu-com] {
   }
 }
 
+body[baijiahao-baidu-com] {
+  div:has([data-testid="follow-btn"]):has([data-testid="author-zan-num"]):not(:has([data-testid="article"])) {
+    display: none;
+  }
+
+  div:has([data-testid="article"]):not(:has([data-testid="follow-btn"]):has([data-testid="author-zan-num"])) {
+    margin: 0;
+    width: 100%;
+  }
+
+  div:has([data-testid="share-btn"]):not(:has([data-testid="article"])) {
+    display: none;
+  }
+}
+
 body[jingyan-baidu-com] {
   #aside,
   nav.nav,
