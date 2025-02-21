@@ -233,6 +233,7 @@ html:has([www-baidu-com]) {
   #s_side_wrapper,
   #header_top_bar,
   .tuner-ads-block,
+  .tenon_pc_material,
   .new-pmd .c-recommend,
   #s_wrap.s-isindex-wrap,
   [href*='b2b.baidu.com'],
