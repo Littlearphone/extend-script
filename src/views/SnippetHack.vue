@@ -213,8 +213,9 @@ html:has([blog-51cto-com]) {
   }
 }
 
-html:has([stackoverflow-com]) {
-  body[stackoverflow-com] {
+html:has([stackoverflow-com],[dba-stackexchange-com]) {
+  body[stackoverflow-com],
+  body[dba-stackexchange-com] {
     #footer,
     #sidebar,
     #left-sidebar,
@@ -227,6 +228,10 @@ html:has([stackoverflow-com]) {
 
       #mainbar {
         width: 100%;
+
+        pre {
+          max-height: fit-content;
+        }
 
         .question.js-question {
           border: 2px solid var(--theme-secondary-400);
@@ -255,7 +260,6 @@ html:has([stackoverflow-com]) {
                 box-shadow: 0 0 8px 2px var(--green-400);
               }
             }
-
           }
         }
       }

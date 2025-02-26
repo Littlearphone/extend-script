@@ -29,6 +29,7 @@ export const MAPPINGS = {
   'https?://stackoverflow.com/questions/.*': SnippetHack,
   'https?://www.360doc.com/content/.*.shtml': SnippetHack,
   'https?://jingyan.baidu.com/article/.*.html': BaiduArticle,
+  'https?://dba.stackexchange.com/questions/.*': SnippetHack,
   'https?://blog.csdn.net/[^/]+/article/details/.*': CsdnArticle,
   'https?://www.douyu.com/([0-9]+|topic/.*[?]rid=[0-9]+)': DouyuLive,
   'https?://cloud.tencent.com.cn/developer/information/.*': SnippetHack,
