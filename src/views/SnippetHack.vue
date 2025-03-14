@@ -10,6 +10,24 @@ onMounted(() => {
 })
 </script>
 <style lang="scss">
+html:has([www-jianshu-com]) {
+  body[www-jianshu-com] {
+    overflow: auto !important;
+
+    nav,
+    aside,
+    footer ~ *,
+    & > div:has([class*='-mask']),
+    div[aria-label="添加评论"] ~ *,
+    [aria-label="ic-nav-mode"] ~ *,
+    section:not(:has(article)):not(:has(textarea)),
+    section:has(article) div:has(div[aria-label="给文章点赞"]),
+    section:has(article) div:has(div[aria-label="给文章点赞"]) ~ * {
+      display: none;
+    }
+  }
+}
+
 html:has([www-jb51-net]) {
   body[www-jb51-net] {
     #ewm,

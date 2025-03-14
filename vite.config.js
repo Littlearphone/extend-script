@@ -17,6 +17,7 @@ const description = `// ==UserScript==
 // @include      /https?://t.bilibili.com/.*/
 // @include      /https?://juejin.cn/post/.*/
 // @include      /https?://www.baidu.com/s[?].*/
+// @include      /https?://www.jianshu.com/p/.*/
 // @include      /https?://tieba.baidu.com/p/.*/
 // @include      /https?://www.jb51.net/.*.html?/
 // @include      /https?://zhuanlan.zhihu.com/p/.*/
