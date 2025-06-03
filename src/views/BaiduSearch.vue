@@ -16,25 +16,26 @@
       <Upload label="背景图片" @change="handleImageChange" @clear="handleImageClear" :thumbnail="background"/>
     </div>
     <div class="nihility-config-item" v-if="injectConfig">
-      <Slider label="背景模糊" v-model="bgBlur" max="50">
-        <template #tips="{value}">
-          {{ value }}px
-        </template>
-      </Slider>
+      <Number label="背景模糊" v-model="bgBlur"/>
+      <!--<Slider label="背景模糊" v-model="bgBlur" max="50">-->
+      <!--  <template #tips="{value}">-->
+      <!--    {{ value }}px-->
+      <!--  </template>-->
+      <!--</Slider>-->
     </div>
   </Settings>
 </template>
 <script setup>
 import { toBase64 } from '../utils'
+import { logger } from '../utils/logger.js'
+import Number from '../components/Number.vue'
 import Switch from '../components/Switch.vue'
 import Upload from '../components/Upload.vue'
-import Slider from '../components/Slider.vue'
 import { loading } from '../utils/loading.js'
 import Settings from '../components/Settings.vue'
 import { Pagination } from '../utils/pagination.js'
 import { nextTick, onMounted, reactive, ref, shallowRef, watch } from 'vue'
 import { addGlobalDraggableElement, DraggableElement } from '../utils/draggable.js'
-import { logger } from '../utils/logger.js'
 
 const CONFIG_KEY = 'baidu-hack-config'
 
@@ -148,6 +149,9 @@ function reactiveHandler() {
 let pagingTimer
 
 function detectHeight() {
+  if (!location.host.endsWith('baidu.com')) {
+    return
+  }
   if (pagingTimer) {
     clearTimeout(pagingTimer)
   }
