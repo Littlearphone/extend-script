@@ -36,7 +36,7 @@ const description = `// ==UserScript==
 // @include      /https?://dba.stackexchange.com/questions/.*/
 // @include      /https?://blog.csdn.net/[^/]+/article/details/.*/
 // @include      /https?://www.douyu.com/([0-9]+|topic/.*[?]rid=[0-9]+)/
-// @include      /https?://cloud.tencent.com.cn/developer/information|article/.*/
+// @include      /https?://cloud.tencent.com.cn/developer/(information|article)/.*/
 // @include      /https?://developer.baidu.com/article/detail([.]html[?]id=.*|s/.*)/
 // @grant        GM.setValue
 // @grant        GM_setValue
