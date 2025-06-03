@@ -21,8 +21,8 @@ const description = `// ==UserScript==
 // @include      /https?://tieba.baidu.com/p/.*/
 // @include      /https?://www.jb51.net/.*.html?/
 // @include      /https?://zhuanlan.zhihu.com/p/.*/
+// @include      /https?://blog.51cto.com/[^/]+/.*/
 // @include      /https?://www.zhihu.com/question/.*/
-// @include      /https?://blog.51cto.com/u_[^/]+/.*/
 // @include      /https?://baijiahao.baidu.com/s[?].*/
 // @include      /https?://(live|www).bilibili.com/.*/
 // @include      /https?://www.google.com/search[?].*/
