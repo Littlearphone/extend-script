@@ -141,7 +141,7 @@ function setBodyBgBlur(blur) {
 function reactiveHandler() {
   const adList = document.querySelectorAll('[data-placeid]:has([data-tuiguang])')
   if (!adList.length) {
-    return requestAnimationFrame(reactiveHandler)
+    return setTimeout(reactiveHandler, 500)
   }
   adList.forEach(item => item.remove())
 }
