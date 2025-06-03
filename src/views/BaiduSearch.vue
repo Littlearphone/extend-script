@@ -139,10 +139,11 @@ function setBodyBgBlur(blur) {
 }
 
 function reactiveHandler() {
-  const adList = document.querySelectorAll('[data-placeid]:has([data-tuiguang])')
-  if (!adList.length) {
+  const selector = '[data-placeid]:has([data-tuiguang])'
+  if (!document.querySelector(selector)) {
     return setTimeout(reactiveHandler, 500)
   }
+  const adList = document.querySelectorAll(selector)
   adList.forEach(item => item.remove())
 }
 
