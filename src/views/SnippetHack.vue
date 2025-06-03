@@ -134,13 +134,21 @@ html:has([juejin-cn]) {
 html:has([cloud-tencent-com-cn]) {
   body[cloud-tencent-com-cn] {
     .cdc-footer,
+    .cdc-top-ad,
     .layout-side,
+    .cdc-suspend-pill,
+    .cdc-ai-recommend,
+    .cdc-directory ~ *,
     .pg-info-introduce ~ *,
+    .cdc-widget-global .code,
     .cdc-header__bottom-home ~ *,
+    div:has(.cdc-activity-modal),
+    .rno-markdown-code .is-ai-btn,
+    .cdc-article-page div.recommend,
     .com-widget-global2__btn:not(.top),
     #community-top-header-product-container,
     .cdc-modal__wrap:has(.cdc-activity-modal) {
-      display: none;
+      display: none !important;
     }
   }
 }
