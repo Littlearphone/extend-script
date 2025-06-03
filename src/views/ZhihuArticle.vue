@@ -28,7 +28,14 @@ html:has([zhuanlan-zhihu-com]) {
   overflow: auto !important;
 
   body[zhuanlan-zhihu-com] {
-    & > div:has(.signFlowModal) {
+    .Post-Row-Content-left {
+      width: 100%;
+    }
+
+    .Post-NormalSub,
+    .Post-Row-Content-right,
+    & > div:has(.signFlowModal),
+    & > div:not([class]):has(img[src*=liukanshan-peek]) {
       display: none;
     }
   }
