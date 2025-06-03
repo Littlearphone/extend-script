@@ -92,6 +92,7 @@ body[jingyan-baidu-com] {
 
 body[developer-baidu-com] {
   padding-top: 64px;
+  overflow: auto !important;
 
   footer,
   #u-editor ~ *,

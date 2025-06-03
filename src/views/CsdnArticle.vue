@@ -35,6 +35,7 @@ onMounted(() => {
 </script>
 <style lang="scss">
 [blog-csdn-net] {
+  pre button,
   .recommend-box,
   div[id$=Advert],
   .toolbar-advert,
@@ -43,6 +44,7 @@ onMounted(() => {
   #articleSearchTip,
   .hljs-button.signin,
   .blog-footer-bottom,
+  .sidecolumn-deepseek,
   .blog_container_aside,
   .toolbar-btn-login ~ *,
   .passport-login-container,

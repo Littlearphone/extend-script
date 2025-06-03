@@ -110,13 +110,19 @@ html:has([juejin-cn]) {
     #sidebar-container,
     div.article-summary,
     .global-float-banner,
+    .top-banners-container,
     .article-suspended-panel,
+    .author-info-block ~ img,
     .context-menu:has(.ai-btn),
     .right-side-nav .vip-entry,
     .right-side-nav .creator-item,
     .code-block-extension-headerRight,
     .suspension-panel > :not(.to-top-btn) {
-      display: none;
+      display: none !important;
+    }
+
+    .main-header {
+      top: 0 !important;
     }
 
     .main-area.article-area {
@@ -285,10 +291,22 @@ html:has([stackoverflow-com],[dba-stackexchange-com]) {
   }
 }
 
-
 html:has([developer-aliyun-com]) {
   body[developer-aliyun-com] {
+    .ai-code,
+    #right-box,
+    .article-feed,
+    div:has(footer),
+    .article-key-list,
+    div:has([data-spm=floating-toolbar]) {
+      display: none;
+    }
 
+    .aigc-fixed,
+    .left-content {
+      width: 100%;
+      padding: 20px;
+    }
   }
 }
 </style>
