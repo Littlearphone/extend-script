@@ -30,6 +30,7 @@ const description = `// ==UserScript==
 // @include      /https?://(cn|www).bing.com/search[?].*/
 // @include      /https?://www.51cto.com/article/.+.html/
 // @include      /https?://stackoverflow.com/questions/.*/
+// @include      /https?://developer.aliyun.com/article/.*/
 // @include      /https?://www.360doc.com/content/.*.shtml/
 // @include      /https?://jingyan.baidu.com/article/.*.html/
 // @include      /https?://dba.stackexchange.com/questions/.*/

@@ -284,4 +284,11 @@ html:has([stackoverflow-com],[dba-stackexchange-com]) {
     }
   }
 }
+
+
+html:has([developer-aliyun-com]) {
+  body[developer-aliyun-com] {
+
+  }
+}
 </style>

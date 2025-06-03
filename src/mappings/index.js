@@ -29,6 +29,7 @@ export const MAPPINGS = {
   'https?://www.51cto.com/article/.+.html': SnippetHack,
   'https?://stackoverflow.com/questions/.*': SnippetHack,
   'https?://www.360doc.com/content/.*.shtml': SnippetHack,
+  'https?://developer.aliyun.com/article/.*': SnippetHack,
   'https?://jingyan.baidu.com/article/.*.html': BaiduArticle,
   'https?://dba.stackexchange.com/questions/.*': SnippetHack,
   'https?://blog.csdn.net/[^/]+/article/details/.*': CsdnArticle,
