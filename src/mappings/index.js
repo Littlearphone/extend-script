@@ -34,6 +34,6 @@ export const MAPPINGS = {
   'https?://dba.stackexchange.com/questions/.*': SnippetHack,
   'https?://blog.csdn.net/[^/]+/article/details/.*': CsdnArticle,
   'https?://www.douyu.com/([0-9]+|topic/.*[?]rid=[0-9]+)': DouyuLive,
-  'https?://cloud.tencent.com.cn/developer/information/.*': SnippetHack,
+  'https?://cloud.tencent.com.cn/developer/information|article/.*': SnippetHack,
   'https?://developer.baidu.com/article/detail([.]html[?]id=.*|s/.*)': BaiduArticle,
 }
