@@ -57,7 +57,7 @@ class BaiduPagination extends Pagination {
       const frames = top.document.querySelectorAll('iframe.nihility-frame')
       frames.forEach(frame => {
         const frameDocument = frame.contentWindow.document
-        frame.style.height = frameDocument.documentElement.scrollHeight + 'px'
+        frame.style.height = frameDocument.documentElement.offsetHeight + 'px'
       })
       const frameDocument = frameElement.contentWindow.document
       const nestedPage = frameDocument.querySelector('.result-molecule:has(#page)')
@@ -219,6 +219,7 @@ html:has([www-baidu-com]) {
 
 [www-baidu-com] {
   min-height: auto;
+  min-width: 1125px;
 
   .nihility-frame-wrapper {
     &, .nihility-frame {
@@ -262,11 +263,6 @@ html:has([www-baidu-com]) {
   div.result-molecule.new-pmd:has(#rs_new),
   #content_left > div.c-group-wrapper [class*="button-list_"] {
     display: none !important;
-  }
-
-  &, .wrapper_new #head {
-    width: auto;
-    min-width: unset !important;
   }
 
   &[nested-window] {
@@ -479,18 +475,22 @@ html:has([www-baidu-com]) {
       box-shadow: 0 0 14px 2px #00000066 !important;
     }
 
-    &_wrapper {
+    &_wrapper,
+    .head_wrapper {
       height: 100%;
 
       .s_form {
         width: fit-content;
+
+        #result_logo {
+          left: 16px;
+          position: absolute;
+        }
       }
     }
 
     &_wrapper,
     .head_wrapper {
-      justify-content: center !important;
-      width: fit-content !important;
       display: flex !important;
       margin: 0 !important;
     }
@@ -513,7 +513,6 @@ html:has([www-baidu-com]) {
       left: 0;
       right: 0;
       margin: auto;
-      max-width: 1200px;
     }
 
     .fm {
@@ -523,7 +522,7 @@ html:has([www-baidu-com]) {
     #s_tab.s_tab .s_tab_inner {
       z-index: 1;
       width: 100%;
-      max-width: 1200px;
+      max-width: 1125px;
       padding: 0 !important;
       justify-content: center;
       display: flex !important;
@@ -550,7 +549,7 @@ html:has([www-baidu-com]) {
       z-index: 1;
       width: 100%;
       display: flex;
-      max-width: 1200px;
+      max-width: 1125px;
       justify-content: center;
       backdrop-filter: blur(12px);
     }
@@ -570,7 +569,7 @@ html:has([www-baidu-com]) {
   }
 
   #u {
-    position: relative;
+    position: absolute;
   }
 
   #container.sam_newgrid .search_tool_conter,
@@ -602,7 +601,7 @@ html:has([www-baidu-com]) {
   .head_nums_cont_inner > div {
     width: 100% !important;
     min-width: 800px;
-    max-width: 1200px;
+    max-width: 1125px;
   }
 
   .new-pmd .c-span9 {
