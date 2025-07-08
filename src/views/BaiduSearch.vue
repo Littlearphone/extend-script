@@ -478,7 +478,6 @@ html:has([www-baidu-com]) {
     &_wrapper,
     .head_wrapper {
       height: 100%;
-      }
     }
 
     &_wrapper,
