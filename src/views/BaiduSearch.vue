@@ -478,14 +478,6 @@ html:has([www-baidu-com]) {
     &_wrapper,
     .head_wrapper {
       height: 100%;
-
-      .s_form {
-        width: fit-content;
-
-        #result_logo {
-          left: 16px;
-          position: absolute;
-        }
       }
     }
 
