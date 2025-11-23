@@ -11,8 +11,8 @@ const description = `// ==UserScript==
 // @version      ${date.getFullYear()}.${date.getMonth()}.${((date.getTime() - monthStart.getTime()) / 1000).toFixed(0)}
 // @description  群体攻击技能
 // @author       littelearphone
-// @downloadURL  http://localhost/nihility.umd.user.js
-// @updateURL    http://localhost/nihility.umd.user.js
+// @downloadURL  https://littlearphone.github.io/extend-script/nihility.umd.user.js
+// @updateURL    https://littlearphone.github.io/extend-script/nihility.umd.user.js
 // @require      https://code.jquery.com/jquery-3.7.1.slim.min.js
 // @include      /https?://t.bilibili.com/.*/
 // @include      /https?://juejin.cn/post/.*/
