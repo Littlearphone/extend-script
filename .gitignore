@@ -1,5 +1,6 @@
 *
 !*/
+node_modules
 !README.md
 !.gitignore
 !index.html
