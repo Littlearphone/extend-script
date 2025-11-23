@@ -77,6 +77,7 @@ export default defineConfig(({ mode }) => {
       }
     },
     build: {
+      outDir: 'docs',
       lib: {
         name: 'nihility',
         formats: ['umd'],

@@ -1,0 +1,10 @@
+*
+!*/
+!README.md
+!.gitignore
+!index.html
+!package.json
+!pnpm-lock.yaml
+!vite.config.js
+!src/
+!doc/nihility.umd.user.js
