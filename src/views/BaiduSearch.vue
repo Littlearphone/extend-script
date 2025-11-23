@@ -260,6 +260,7 @@ html:has([www-baidu-com]) {
   [data-placeid]:has([data-tuiguang]),
   .s_tab_inner [href*='wenku.baidu.com'],
   .s_tab_inner [href*='zhidao.baidu.com'],
+  .c-group-wrapper:has([class*=aladdin]),
   div.result-molecule.new-pmd:has(#rs_new),
   #content_left > div.c-group-wrapper [class*="button-list_"] {
     display: none !important;
@@ -478,15 +479,6 @@ html:has([www-baidu-com]) {
     &_wrapper,
     .head_wrapper {
       height: 100%;
-
-      .s_form {
-        width: fit-content;
-
-        #result_logo {
-          left: 16px;
-          position: absolute;
-        }
-      }
     }
 
     &_wrapper,
