@@ -44,6 +44,22 @@ body[baijiahao-baidu-com] {
   div:has([data-testid="share-btn"]):not(:has([data-testid="article"])) {
     display: none;
   }
+
+  .hasRecommendCard {
+    display: none;
+  }
+
+  div:has(~ input[value="百度一下"]) {
+    width: auto;
+  }
+
+  #ssr-content > div {
+    min-width: auto;
+
+    &:has(.hasRecommendCard) {
+      padding: 70px 16px 0;
+    }
+  }
 }
 
 body[jingyan-baidu-com] {
