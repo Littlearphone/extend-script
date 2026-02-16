@@ -6,6 +6,9 @@
 </script>
 <style lang="scss">
 body[tieba-baidu-com] {
+  .search_nav,
+  li.u_member,
+  li.u_official,
   .right_section,
   .tbui_aside_float_bar,
   #tiebaCustomPassLogin {
@@ -27,6 +30,31 @@ body[tieba-baidu-com] {
       .edui-container {
         width: 100% !important;
       }
+    }
+  }
+
+  .left_section {
+    &,
+    .l_post_bright,
+    .core_reply_wrapper,
+    .core_title_wrap_bright {
+      width: 100%;
+    }
+
+    .d_post_content_main {
+      width: calc(100% - 160px);
+    }
+  }
+
+  // 新版贴吧
+  &.cos-tieba {
+    .center-content {
+      margin: 0;
+    }
+
+    .right-nav-bar,
+    .right-menu .menu-list > :not(:first-child,:last-child) {
+      display: none;
     }
   }
 }
@@ -58,6 +86,11 @@ body[baijiahao-baidu-com] {
 
     &:has(.hasRecommendCard) {
       padding: 70px 16px 0;
+    }
+
+    [data-testid="article"] img {
+      max-height: calc(100vh - 100px);
+      object-fit: contain;
     }
   }
 }
