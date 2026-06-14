@@ -16,6 +16,7 @@ const description = `// ==UserScript==
 // @require      https://code.jquery.com/jquery-3.7.1.slim.min.js
 // @include      /https?://t.bilibili.com/.*/
 // @include      /https?://juejin.cn/post/.*/
+// @include      /https?://www.douyin.com/.*/
 // @include      /https?://www.baidu.com/s[?].*/
 // @include      /https?://www.jianshu.com/p/.*/
 // @include      /https?://tieba.baidu.com/p/.*/
@@ -32,6 +33,7 @@ const description = `// ==UserScript==
 // @include      /https?://stackoverflow.com/questions/.*/
 // @include      /https?://developer.aliyun.com/article/.*/
 // @include      /https?://www.360doc.com/content/.*.shtml/
+// @include      /https?://www.douyu.com/directory/myFollow/
 // @include      /https?://jingyan.baidu.com/article/.*.html/
 // @include      /https?://dba.stackexchange.com/questions/.*/
 // @include      /https?://blog.csdn.net/[^/]+/article/details/.*/

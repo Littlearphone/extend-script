@@ -54,8 +54,13 @@ function fullscreenButtonArea() {
 }
 
 function playNextVideo(e) {
+  logger.debug('视频播放结束', () => console.trace())
   const nextButton = document.querySelector('.bpx-player-ctrl-next')
   if (!nextButton) {
+    const cancelRelated = document.querySelector('.bpx-player-ending-related-item-cancel')
+    if (cancelRelated) {
+      cancelRelated.click()
+    }
     return e.target.removeEventListener('ended', playNextVideo)
   }
   if (!document.querySelector('.bpx-player-ctrl-setting-loop input').checked) {
@@ -122,7 +127,7 @@ function triggerLiveQualityOriginal() {
 function detectVideoPlaying() {
   const video = document.querySelector('video')
   if (!video) {
-    return setTimeout(detectVideoPlaying, 500)
+    return requestAnimationFrame(detectVideoPlaying)
   }
   if (video.closest('#hot_module_player')) {
     return
@@ -130,7 +135,7 @@ function detectVideoPlaying() {
   if (video.paused) {
     logger.debug('视频自动开播', () => console.trace())
     video.play()
-    return setTimeout(detectVideoPlaying, 500)
+    return requestAnimationFrame(detectVideoPlaying)
   }
   if (document.querySelector('.web-player-icon-roomStatus svg')) {
     speedAdjustable.value = false
@@ -138,7 +143,7 @@ function detectVideoPlaying() {
   if (speedAdjustable.value && video.playbackRate !== playbackRate.value) {
     logger.debug('视频倍率调节', () => console.trace())
     video.playbackRate = playbackRate.value
-    return setTimeout(detectVideoPlaying, 500)
+    return requestAnimationFrame(detectVideoPlaying)
   }
   if (!fullWebScreen.value) {
     return setTimeout(listeningVideoFinish, 100)
@@ -156,7 +161,7 @@ function detectVideoPlaying() {
       logger.debug('启动网页全屏', () => console.trace())
       return setTimeout(listeningVideoFinish, 100)
     }
-    return setTimeout(detectVideoPlaying, 500)
+    return requestAnimationFrame(detectVideoPlaying)
   }
   const selector = [
     '.bpx-player-ctrl-web-enter',
@@ -170,7 +175,7 @@ function detectVideoPlaying() {
     logger.debug('启动网页全屏', () => console.trace())
     return setTimeout(listeningVideoFinish, 100)
   }
-  return setTimeout(detectVideoPlaying, 500)
+  return requestAnimationFrame(detectVideoPlaying)
 }
 
 class BilibiliSettingsButton extends DraggableElement {

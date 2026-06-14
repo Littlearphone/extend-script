@@ -1,8 +1,10 @@
 import DouyuLive from '../views/DouyuLive.vue'
+import DouyuFollow from '../views/DouyuFollow.vue'
 import BingSearch from '../views/BingSearch.vue'
 import BaiduSearch from '../views/BaiduSearch.vue'
 import CsdnArticle from '../views/CsdnArticle.vue'
 import SnippetHack from '../views/SnippetHack.vue'
+import DouyinVideo from '../views/DouyinVideo.vue'
 import BaiduArticle from '../views/BaiduArticle.vue'
 import GoogleSearch from '../views/GoogleSearch.vue'
 import ZhihuArticle from '../views/ZhihuArticle.vue'
@@ -14,6 +16,7 @@ if (location.hostname === 'localhost') {
 export const MAPPINGS = {
   'https?://localhost(:\d+)?.*': BilibiliVideo,
   'https?://juejin.cn/post/.*': SnippetHack,
+  'https?://www.douyin.com/.*': DouyinVideo,
   'https?://t.bilibili.com/.*': BilibiliVideo,
   'https?://www.jianshu.com/p/.*': SnippetHack,
   'https?://www.baidu.com/s[?].*': BaiduSearch,
@@ -30,6 +33,7 @@ export const MAPPINGS = {
   'https?://stackoverflow.com/questions/.*': SnippetHack,
   'https?://www.360doc.com/content/.*.shtml': SnippetHack,
   'https?://developer.aliyun.com/article/.*': SnippetHack,
+  'https?://www.douyu.com/directory/myFollow': DouyuFollow,
   'https?://jingyan.baidu.com/article/.*.html': BaiduArticle,
   'https?://dba.stackexchange.com/questions/.*': SnippetHack,
   'https?://blog.csdn.net/[^/]+/article/details/.*': CsdnArticle,
