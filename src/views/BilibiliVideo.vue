@@ -53,7 +53,14 @@ function fullscreenButtonArea() {
   return document.querySelector(selector)
 }
 
+let handlingVideoEnded = false
+
 function playNextVideo(e) {
+  // 防止重复触发：如果正在处理中，或者视频已经不在结束状态，直接返回
+  if (handlingVideoEnded || !e.target.ended) {
+    return
+  }
+  handlingVideoEnded = true
   logger.debug('视频播放结束', () => console.trace())
   const nextButton = document.querySelector('.bpx-player-ctrl-next')
   if (!nextButton) {
@@ -61,12 +68,13 @@ function playNextVideo(e) {
     if (cancelRelated) {
       cancelRelated.click()
     }
-    return e.target.removeEventListener('ended', playNextVideo)
+    handlingVideoEnded = false
+    return
   }
   if (!document.querySelector('.bpx-player-ctrl-setting-loop input').checked) {
     nextButton.click()
   }
-  e.target.removeEventListener('ended', playNextVideo)
+  handlingVideoEnded = false
   return detectVideoPlaying()
 }
 
@@ -75,6 +83,8 @@ function listeningVideoFinish() {
   if (video.ended) {
     return playNextVideo({ target: video })
   }
+  // 视频离开 ended 状态（用户回播后），重置防重入标志
+  handlingVideoEnded = false
   video.addEventListener('ended', playNextVideo)
 }
 
