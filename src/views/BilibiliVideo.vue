@@ -32,16 +32,16 @@ const speedAdjustable = ref(true)
 const settingsElement = shallowRef()
 watch(injectConfig, value => {
   config.injectConfig = value
-  GM_setValue(CONFIG_KEY, JSON.stringify(Object.assign({}, config)))
+  GM_setValue(CONFIG_KEY, JSON.stringify({ ...config }))
   nextTick(() => top.location.reload())
 })
 watch(fullWebScreen, value => {
   config.fullWebScreen = value
-  GM_setValue(CONFIG_KEY, JSON.stringify(Object.assign({}, config)))
+  GM_setValue(CONFIG_KEY, JSON.stringify({ ...config }))
 })
 watch(playbackRate, value => {
   config.playbackRate = value || config.playbackRate
-  GM_setValue(CONFIG_KEY, JSON.stringify(Object.assign({}, config)))
+  GM_setValue(CONFIG_KEY, JSON.stringify({ ...config }))
 })
 
 function fullscreenButtonArea() {
@@ -54,6 +54,7 @@ function fullscreenButtonArea() {
 }
 
 let handlingVideoEnded = false
+let livePollingActive = false
 
 function playNextVideo(e) {
   // 防止重复触发：如果正在处理中，或者视频已经不在结束状态，直接返回
@@ -80,6 +81,7 @@ function playNextVideo(e) {
 
 function listeningVideoFinish() {
   const video = document.querySelector('video')
+  if (!video || video.closest('#hot_module_player')) return
   if (video.ended) {
     return playNextVideo({ target: video })
   }
@@ -89,11 +91,11 @@ function listeningVideoFinish() {
 }
 
 function triggerLiveWebFullScreen() {
-  if (document.querySelector('.player-full-win')) {
-    return true
+  if (!livePollingActive || document.querySelector('.player-full-win')) {
+    return
   }
   const video = document.querySelector('video')
-  video.dispatchEvent(new MouseEvent('mousemove', { bubbles: true }))
+  video?.dispatchEvent(new MouseEvent('mousemove', { bubbles: true }))
   const fullWebScreen = document.querySelector('.web-player-controller-wrap .right-area .tip-wrap:nth-child(2) svg')
   if (fullWebScreen) {
     fullWebScreen.dispatchEvent(new MouseEvent('click', { bubbles: true }))
@@ -103,8 +105,8 @@ function triggerLiveWebFullScreen() {
 }
 
 function triggerLiveHideRoomAside() {
-  if (document.querySelector('.player-full-win.hide-aside-area')) {
-    return true
+  if (!livePollingActive || document.querySelector('.player-full-win.hide-aside-area')) {
+    return
   }
   const asideButton = document.querySelector('.player-full-win #aside-area-toggle-btn')
   if (asideButton && !document.querySelector('.hide-aside-area')) {
@@ -114,20 +116,21 @@ function triggerLiveHideRoomAside() {
 }
 
 function triggerLiveQualityOriginal() {
+  if (!livePollingActive) return
   const selectedQuality = document.querySelector('.quality-wrap .selected-qn')
   if (!selectedQuality) {
     const video = document.querySelector('video')
-    video.dispatchEvent(new MouseEvent('mousemove', { bubbles: true }))
+    video?.dispatchEvent(new MouseEvent('mousemove', { bubbles: true }))
     return setTimeout(triggerLiveQualityOriginal, 100)
   }
   if (selectedQuality.innerText.trim() === '原画') {
-    return true
+    return
   }
   const asideButton = document.querySelector('.web-player-controller-wrap .right-area .quality-wrap .list-it')
   if (asideButton) {
     asideButton.dispatchEvent(new MouseEvent('click', { bubbles: true }))
     if (asideButton.innerText.trim() !== '原画') {
-      return true
+      return
     }
   }
   selectedQuality.dispatchEvent(new MouseEvent('mouseenter', { bubbles: true }))
@@ -147,7 +150,11 @@ function detectVideoPlaying() {
       return
     }
     logger.debug('启动网页全屏', () => console.trace())
-    return triggerLiveWebFullScreen() && triggerLiveHideRoomAside() && triggerLiveQualityOriginal()
+    livePollingActive = true
+    triggerLiveWebFullScreen()
+    triggerLiveHideRoomAside()
+    triggerLiveQualityOriginal()
+    return
   }
   if (video.paused) {
     logger.debug('视频自动开播', () => console.trace())
@@ -179,7 +186,7 @@ function detectVideoPlaying() {
     '.bilibili-player-iconfont-web-fullscreen-off'
   ].join(',')
   const fullscreenButton = buttonArea.querySelector(selector)
-  fullscreenButton.offsetWidth && fullscreenButton.click()
+  if (fullscreenButton?.offsetWidth) fullscreenButton.click()
   const classList = buttonArea.classList
   if (classList.contains('closed') || classList.contains('active') || classList.contains('bpx-state-entered')) {
     logger.debug('启动网页全屏', () => console.trace())
@@ -233,6 +240,7 @@ function createCollapseButton() {
 function mounted() {
   logger.debug('[]~(￣▽￣)~* 脚本已准备就绪')
   if (location.hostname === 'www.bilibili.com' || (location.hostname === 'live.bilibili.com' && location.pathname.length > 1)) {
+    livePollingActive = true
     detectVideoPlaying()
     detectTemporaryPlaying()
   } else if (location.hostname === 't.bilibili.com') {
@@ -240,24 +248,34 @@ function mounted() {
   }
 }
 
+window.addEventListener('beforeunload', () => {
+  livePollingActive = false
+})
+
 onMounted(() => {
   mounted()
   sessionStorage.removeItem('lastVideoSrc')
-  const pushState = unsafeWindow.history.pushState
-  unsafeWindow.history.pushState = function (state, unused, url) {
-    try {
-      return pushState.apply(this, [state, unused, url])
-    } finally {
-      setTimeout(mounted, 2000)
+  if (!unsafeWindow.history.pushState.__hijacked__) {
+    const pushState = unsafeWindow.history.pushState
+    unsafeWindow.history.pushState = function (state, unused, url) {
+      try {
+        return pushState.apply(this, [state, unused, url])
+      } finally {
+        setTimeout(mounted, 2000)
+      }
     }
+    unsafeWindow.history.pushState.__hijacked__ = true
   }
-  const replaceState = unsafeWindow.history.replaceState
-  unsafeWindow.history.replaceState = function (state, unused, url) {
-    try {
-      return replaceState.apply(this, [state, unused, url])
-    } finally {
-      setTimeout(mounted, 2000)
+  if (!unsafeWindow.history.replaceState.__hijacked__) {
+    const replaceState = unsafeWindow.history.replaceState
+    unsafeWindow.history.replaceState = function (state, unused, url) {
+      try {
+        return replaceState.apply(this, [state, unused, url])
+      } finally {
+        setTimeout(mounted, 2000)
+      }
     }
+    unsafeWindow.history.replaceState.__hijacked__ = true
   }
 })
 </script>

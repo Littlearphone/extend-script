@@ -3,6 +3,8 @@
 node_modules
 !README.md
 !.gitignore
+!.claudeignore
+!CLAUDE.md
 !index.html
 !package.json
 !pnpm-lock.yaml
