@@ -132,6 +132,13 @@ function detectVideoPlaying() {
   if (video.closest('#hot_module_player')) {
     return
   }
+  if (location.hostname === 'live.bilibili.com') {
+    if (document.querySelector('#room-card-list')) {
+      return
+    }
+    logger.debug('启动网页全屏', () => console.trace())
+    return triggerLiveWebFullScreen() && triggerLiveHideRoomAside() && triggerLiveQualityOriginal()
+  }
   if (video.paused) {
     logger.debug('视频自动开播', () => console.trace())
     video.play()
@@ -147,13 +154,6 @@ function detectVideoPlaying() {
   }
   if (!fullWebScreen.value) {
     return setTimeout(listeningVideoFinish, 100)
-  }
-  if (location.hostname === 'live.bilibili.com') {
-    if (document.querySelector('#room-card-list')) {
-      return
-    }
-    logger.debug('启动网页全屏', () => console.trace())
-    return triggerLiveWebFullScreen() && triggerLiveHideRoomAside() && triggerLiveQualityOriginal()
   }
   const buttonArea = fullscreenButtonArea()
   if (!buttonArea) {
