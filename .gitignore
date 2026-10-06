@@ -1,13 +1,25 @@
-*
-!*/
-node_modules
-!README.md
-!.gitignore
-!.claudeignore
-!CLAUDE.md
-!index.html
-!package.json
-!pnpm-lock.yaml
-!vite.config.js
-!src/
-!doc/nihility.umd.user.js
+# 口径：**默认入库，点名忽略**。
+# 之前的白名单写法（`*` + `!src/`）只放行了目录本身，里面的新文件会静默丢掉
+# （DouyinVideo.vue / DouyuFollow.vue / tests/ / publish.js 都因此从没进过版本库），别再改回去。
+
+node_modules/
+
+# IDE
+.idea/
+*.iml
+
+# 构建产物：docs/ 是 GitHub Pages 的发布目录，只保留用户脚本本体
+docs/*
+!docs/nihility.umd.user.js
+
+# 本地验证工具与截图（Playwright + 参考截图），不进公开仓库
+tests/
+
+# 环境相关 / 独立脚本：有意不入库
+# publish.js 按本机 nginx 路径与远端 SFTP 走，换台机器就得改
+publish.js
+# 另一个独立用户脚本（与本项目无关）
+ohohoho.js
+
+*.log
+.DS_Store

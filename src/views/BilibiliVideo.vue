@@ -1,5 +1,5 @@
 <template>
-  <Settings ref="settingsElement" @mounted="handleSettingsMounted" panel-width="300px" panel-height="250px">
+  <Settings ref="settingsElement" @mounted="handleSettingsMounted" panel-width="300px" panel-height="300px">
     <div class="nihility-config-item">
       <Switch label="注入配置" v-model="injectConfig"/>
     </div>
@@ -13,14 +13,19 @@
         </template>
       </Slider>
     </div>
+    <div class="nihility-config-item" v-if="downloadEntryVisible">
+      <button class="nihility-download-entry" @click="downloadDialogOpen = true">视频下载</button>
+    </div>
   </Settings>
+  <VideoDownloadDialog v-if="downloadDialogOpen" @close="downloadDialogOpen = false"/>
 </template>
 <script setup>
 import Slider from '../components/Slider.vue'
 import Switch from '../components/Switch.vue'
 import Settings from '../components/Settings.vue'
-import { nextTick, onMounted, reactive, ref, shallowRef, watch } from 'vue'
-import { addGlobalDraggableElement, DraggableElement } from '../utils/draggable.js'
+import VideoDownloadDialog from '../components/VideoDownloadDialog.vue'
+import { computed, nextTick, onMounted, reactive, ref, shallowRef, watch } from 'vue'
+import { addGlobalDraggableElement, DraggableElement, relocateDraggableElements } from '../utils/draggable.js'
 
 const CONFIG_KEY = 'bilibili-hack-config'
 
@@ -30,6 +35,9 @@ const fullWebScreen = ref(config.fullWebScreen || false)
 const playbackRate = ref(config.playbackRate || 1.25)
 const speedAdjustable = ref(true)
 const settingsElement = shallowRef()
+const downloadDialogOpen = ref(false)
+// 只有 www.bilibili.com 的页面拿得到可下载的视频信息；直播与动态页不摆这个入口。
+const downloadEntryVisible = computed(() => location.hostname === 'www.bilibili.com')
 watch(injectConfig, value => {
   config.injectConfig = value
   GM_setValue(CONFIG_KEY, JSON.stringify({ ...config }))
@@ -56,15 +64,40 @@ function fullscreenButtonArea() {
 let handlingVideoEnded = false
 let livePollingActive = false
 
+function isLastEpisode() {
+  // 查找当前视频所在的剧集/合集列表，判断是否为最后一集
+  const episodeContainers = [
+    '.video-sections-content-list',      // 多P视频列表
+    '.base-video-sections-v1',           // 新版合集
+    '.video-pod__list',                  // 播单
+  ]
+  for (const selector of episodeContainers) {
+    const container = document.querySelector(selector)
+    if (!container) continue
+    const activeItem = container.querySelector('.active, [class*="active"]')
+    if (!activeItem) continue
+    // 检查后面是否还有同级剧集项
+    const nextSibling = activeItem.nextElementSibling
+    if (nextSibling && nextSibling.matches('a, li, div')) {
+      return false // 还有下一集
+    }
+    return true // 当前列表最后一项
+  }
+  // 没找到任何剧集列表 → 单独视频，阻止跳到推荐
+  return true
+}
+
 function playNextVideo(e) {
-  // 防止重复触发：如果正在处理中，或者视频已经不在结束状态，直接返回
   if (handlingVideoEnded || !e.target.ended) {
     return
   }
   handlingVideoEnded = true
   logger.debug('视频播放结束', () => console.trace())
+
   const nextButton = document.querySelector('.bpx-player-ctrl-next')
-  if (!nextButton) {
+
+  // 无下一集按钮 或 已是剧集最后一集 → 关闭推荐弹窗，不跳转
+  if (!nextButton || isLastEpisode()) {
     const cancelRelated = document.querySelector('.bpx-player-ending-related-item-cancel')
     if (cancelRelated) {
       cancelRelated.click()
@@ -72,6 +105,7 @@ function playNextVideo(e) {
     handlingVideoEnded = false
     return
   }
+
   if (!document.querySelector('.bpx-player-ctrl-setting-loop input').checked) {
     nextButton.click()
   }
@@ -202,17 +236,24 @@ class BilibiliSettingsButton extends DraggableElement {
 }
 
 function handleSettingsMounted() {
-  nextTick(() => {
+  requestAnimationFrame(() => {
     const settingsButton = settingsElement.value.button
     const bounds = settingsButton.getBoundingClientRect()
+    const buttonW = bounds.width || 50
+    const buttonH = bounds.height || 50
+    const initX = 80
+    const initY = Math.max(0, window.innerHeight - 80 - buttonH)
     addGlobalDraggableElement(new BilibiliSettingsButton(settingsButton, {
-      initialX: 80,
-      initialY: window.innerHeight - 80 - bounds.height,
-      minX: 0, maxX: window.innerWidth - bounds.width,
-      minY: 0, maxY: window.innerHeight - bounds.height
+      initialX: initX,
+      initialY: initY,
+      minX: 0, maxX: window.innerWidth - buttonW,
+      minY: 0, maxY: window.innerHeight - buttonH
     }))
     settingsElement.value.updatePosition()
     settingsElement.value.closePanel()
+
+    // 等 B 站自身布局稳定后（约 3s），做一次性的视口修正，避免被挤出可见区域
+    setTimeout(() => relocateDraggableElements(), 3000)
   })
 }
 
@@ -237,12 +278,32 @@ function createCollapseButton() {
   publishSection.appendChild(node)
 }
 
+// 监控推荐倒计时弹窗，一出现立即关闭（后台标签页也能执行）
+let autoCancelObserver = null
+
+function watchRecommendationOverlay() {
+  if (autoCancelObserver) return
+  // B 站播放器容器
+  const player = document.querySelector('#bilibili-player, .bpx-player-video-wrap, .player-module')
+  if (!player) return
+
+  autoCancelObserver = new MutationObserver(() => {
+    const cancelBtn = document.querySelector('.bpx-player-ending-related-item-cancel')
+    if (cancelBtn) {
+      cancelBtn.click()
+      logger.debug('MutationObserver 自动关闭推荐倒计时')
+    }
+  })
+  autoCancelObserver.observe(player, { childList: true, subtree: true })
+}
+
 function mounted() {
   logger.debug('[]~(￣▽￣)~* 脚本已准备就绪')
   if (location.hostname === 'www.bilibili.com' || (location.hostname === 'live.bilibili.com' && location.pathname.length > 1)) {
     livePollingActive = true
     detectVideoPlaying()
     detectTemporaryPlaying()
+    watchRecommendationOverlay()
   } else if (location.hostname === 't.bilibili.com') {
     return setTimeout(createCollapseButton, 100)
   }
@@ -250,6 +311,19 @@ function mounted() {
 
 window.addEventListener('beforeunload', () => {
   livePollingActive = false
+})
+
+// 标签页恢复可见时重新检测，并关闭可能已弹出的推荐倒计时
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden) return
+  // 关闭后台时弹出的推荐倒计时
+  const cancelRelated = document.querySelector('.bpx-player-ending-related-item-cancel')
+  if (cancelRelated) cancelRelated.click()
+  // 恢复视频检测循环（RAF 在后台被节流）
+  if (livePollingActive) {
+    handlingVideoEnded = false
+    detectVideoPlaying()
+  }
 })
 
 onMounted(() => {
@@ -381,6 +455,21 @@ body[live-bilibili-com] {
 body[nested-window] {
   [data-id=nihility-entry] {
     display: none;
+  }
+}
+</style>
+<style lang="scss" scoped>
+.nihility-download-entry {
+  width: 100%;
+  color: #fff;
+  cursor: pointer;
+  padding: .45em 1em;
+  border-radius: 6px;
+  border: 1px solid #409eff66;
+  background-color: #409eff33;
+
+  &:hover {
+    background-color: #409eff66;
   }
 }
 </style>
