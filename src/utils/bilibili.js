@@ -60,6 +60,21 @@ export function currentPlayingKey() {
   return `v_${Number(params.get('p') || 1)}_${bvid}`
 }
 
+// 投稿/录播工具自动生成的分P名不是人能认的名字，页面上显示的是别的字段。
+// 已见的几种：`lv_0_20260915213837`、`studio_video_1791036734034`、`IMG_20250101_120000`、纯数字。
+// 判据要**宽**（宁可误判成占位、退回视频标题，也不要拿一串编号当文件名）。
+function isPlaceholderName(name) {
+  const value = String(name || '').trim()
+  if (!value) return true
+  // 纯数字（时间戳之类）
+  if (/^\d{6,}$/.test(value)) return true
+  // 全是 ASCII 字母数字下划线短横点空格，且含一长串数字 —— 人手写的标题不会是这种形状
+  if (/^[a-z0-9_\-.\s]+$/i.test(value) && /\d{6,}/.test(value)) return true
+  // `工具名_工具名_数字`（数字短也要判，如 studio_video_123）
+  if (/^[a-z]{2,}[_-][a-z]{2,}[_-]\d+$/i.test(value)) return true
+  return false
+}
+
 function flattenSeason(season) {
   const episodes = []
   for (const section of season?.sections || []) {
@@ -70,12 +85,29 @@ function flattenSeason(season) {
         aid: episode.aid ?? page.aid,
         cid: episode.cid ?? page.cid,
         page: page.page,
-        part: page.part || episode.arc?.title || '',
         duration: page.duration || episode.arc?.duration,
+        // 按"页面上显示的那个名字"排优先级：合集列表显示的是 episode.title，
+        // page.part 只是这条投稿自己的分 P 名，常常是占位编号 → 放最后。
+        names: [episode.title, episode.long_title, episode.arc?.title, page.part],
       })
     }
   }
   return episodes
+}
+
+// 名字的取法只有一条规则：**页面上显示的是哪个字段，就取哪个字段**。
+//   - 单 P：页面上那一集显示的就是视频标题（不是 pages[].part —— 那常是投稿工具的编号）；
+//   - 多 P：页面上显示的就是 pages[].part；
+//   - 合集：页面上显示的就是 episode.title。
+// 只有"页面上那个字段本身就是机器编号"时才需要兜底（`isPlaceholderName` 判据），
+// 而**兜底必须显式标记**（item.nameAuto）——猜错了要让人看得见，不能静默给个错名字。
+function pickName(candidates, fallback) {
+  for (const candidate of candidates) {
+    if (candidate && !isPlaceholderName(candidate)) {
+      return { name: candidate, auto: false }
+    }
+  }
+  return { name: fallback, auto: true }
 }
 
 function collectUgcItems(state) {
@@ -94,24 +126,29 @@ function collectUgcItems(state) {
       aid: page.aid ?? videoData.aid,
       cid: page.cid,
       page: page.page,
-      part: page.part || '',
       duration: page.duration,
+      names: [page.part],
     }))
   const multiple = list.length > 1
   const items = list.map((entry, index) => {
     // 合集里的每一集自己的 page 都是 1（各自是单 P 视频），拿它当编号会全部撞名，
     // 所以合集用列表序号、普通多 P 才用 page。
     const page = Number(entry.page) || index + 1
-    const part = entry.part || ''
+    const part = entry.part || (entry.names || [])[0] || ''
     const order = String(index + 1).padStart(2, '0')
-    const prefixBase = usingSeason
-      ? `${title}_${order}${part ? `_${part}` : ''}`
-      : (multiple ? `${title}_P${page}` : title)
+    const picked = usingSeason
+      ? pickName(entry.names || [], `${title}_${order}`)
+      : (multiple
+        ? pickName([part], `${title}_P${page}`)
+        // 单 P：直接用视频标题；标题都没有才退回 part（那时要标记，让用户核对）
+        : (videoData.title ? { name: videoData.title, auto: false } : pickName([part], `${title}`)))
     return {
       key: `v_${page}_${entry.bvid}`,
       kind: 'video',
-      title: usingSeason ? (part || title) : (multiple ? `P${page} ${part || title}` : (part || title)),
-      prefix: safeFileName(prefixBase),
+      title: picked.name,
+      // 名字是兜底来的 → 界面要标一下，别让人以为这就是页面上的名字
+      nameAuto: picked.auto,
+      prefix: safeFileName(picked.name),
       bvid: entry.bvid,
       aid: entry.aid,
       cid: entry.cid,
@@ -156,19 +193,23 @@ async function collectBangumiItems(state) {
     }))
   }
   if (!list.length) throw new Error('这个番剧没有可下载的剧集')
-  const items = list.map((entry, index) => ({
-    key: `b_${entry.epId}`,
-    kind: 'bangumi',
-    // 标题本身就带着"第 N 话"，别再加一层编号（序号在表格的 # 列里）。
-    title: entry.title || `第${index + 1}话`,
-    prefix: safeFileName(`${seasonTitle}_${String(index + 1).padStart(2, '0')}_${entry.title}`),
-    epId: entry.epId,
-    bvid: entry.bvid,
-    aid: entry.aid,
-    cid: entry.cid,
-    page: index + 1,
-    duration: toSeconds(entry.duration),
-  }))
+  const items = list.map((entry, index) => {
+    // 标题本身就带着"第 N 话"，别再加一层编号（序号在表格的 # 列里）；前缀也用它本身。
+    const picked = pickName([entry.title], `${seasonTitle}_${String(index + 1).padStart(2, '0')}`)
+    return {
+      key: `b_${entry.epId}`,
+      kind: 'bangumi',
+      title: picked.name,
+      nameAuto: picked.auto,
+      prefix: safeFileName(picked.name),
+      epId: entry.epId,
+      bvid: entry.bvid,
+      aid: entry.aid,
+      cid: entry.cid,
+      page: index + 1,
+      duration: toSeconds(entry.duration),
+    }
+  })
   return { title: seasonTitle, items }
 }
 
@@ -192,10 +233,16 @@ function streamUrls(stream) {
   return [...new Set(urls.map(url => url.startsWith('http://') ? `https://${url.slice(7)}` : url))]
 }
 
-function pickVideoStream(videos, codecid) {
+// 清晰度阶梯里挑一档：同 codecid 优先（避免同一档位的 AVC/HEVC/AV1 三份重复），
+// 然后取"不高于想要的那档"里最高的一档；想要的比最低还低就取最低。
+// preferQn 为空（0）＝直接要最高。
+function pickVideoStream(videos, codecid, preferQn) {
   const matched = codecid ? videos.filter(video => video.codecid === codecid) : []
-  const pool = matched.length ? matched : videos
-  return pool.reduce((best, current) => (current.id > best.id ? current : best), pool[0])
+  const pool = (matched.length ? matched : videos).slice().sort((a, b) => a.id - b.id)
+  if (!pool.length) return null
+  if (!preferQn) return pool[pool.length - 1]
+  const notAbove = pool.filter(video => video.id <= preferQn)
+  return notAbove.length ? notAbove[notAbove.length - 1] : pool[0]
 }
 
 function pickAudioStream(audios) {
@@ -204,10 +251,12 @@ function pickAudioStream(audios) {
   return pool.reduce((best, current) => (current.id > best.id ? current : best), pool[0])
 }
 
-function normalizeStreams(data) {
+// 把 playurl 的响应归一化。**响应里的 `dash.video[]` 是整个清晰度阶梯**（不是只有一档），
+// 所以"让用户选清晰度"是在这里本地挑，不需要任何额外请求。
+function normalizeStreams(data, preferQn) {
   const dash = data?.dash
   if (dash?.video?.length) {
-    const video = pickVideoStream(dash.video, data.video_codecid)
+    const video = pickVideoStream(dash.video, data.video_codecid, preferQn)
     const audio = dash.audio?.length ? pickAudioStream(dash.audio) : null
     return {
       mode: 'dash',
@@ -221,6 +270,7 @@ function normalizeStreams(data) {
   if (durl?.url) {
     return {
       mode: 'progressive',
+      // 整段流只有服务端给的那一档，挑不了
       quality: QUALITY_LABELS[data.quality] || data.quality || '未知',
       codecid: null,
       progressive: { urls: streamUrls(durl), size: durl.size || 0 },
@@ -231,27 +281,27 @@ function normalizeStreams(data) {
 
 // 页面播放器自己拿的那份流信息：不花接口，但只对"当前正在播的这条"有效，而且质量是
 // 播放器当前选的那一档（不一定是最高）。所以只当接口失败时的兜底。
-function playinfoStreams(item) {
+function playinfoStreams(item, preferQn) {
   if (item.key !== currentPlayingKey()) return null
   const raw = pageWindow().__playinfo__
   // 普通视频是 { data: { dash } }，番剧是 { result: { video_info } }，两种都认。
   const data = raw?.data?.dash || raw?.data?.durl ? raw.data : (raw?.result?.video_info || raw?.result)
   if (!data) return null
-  return normalizeStreams(data)
+  return normalizeStreams(data, preferQn)
 }
 
-async function ugcStreams(item, qn) {
+async function ugcStreams(item, qn, preferQn) {
   const params = new URLSearchParams({ qn: String(qn), fnver: '0', fnval: '4048', fourk: '1' })
   if (item.aid) params.set('avid', String(item.aid))
   if (item.bvid) params.set('bvid', item.bvid)
   if (item.cid) params.set('cid', String(item.cid))
   const json = await requestJSON(`https://api.bilibili.com/x/player/wbi/playurl?${params}`)
-  const streams = normalizeStreams(json.data)
+  const streams = normalizeStreams(json.data, preferQn)
   if (!streams) throw new Error('这个视频没有给出可用的流地址（可能是付费或地区限制）')
   return streams
 }
 
-async function bangumiStreams(item, qn) {
+async function bangumiStreams(item, qn, preferQn) {
   const params = new URLSearchParams({
     support_multi_audio: 'true',
     ep_id: String(item.epId),
@@ -262,18 +312,23 @@ async function bangumiStreams(item, qn) {
     from_client: 'BROWSER',
   })
   const json = await requestJSON(`https://api.bilibili.com/pgc/player/web/v2/playurl?${params}`)
-  const streams = normalizeStreams(json.result?.video_info || json.result)
+  const streams = normalizeStreams(json.result?.video_info || json.result, preferQn)
   if (!streams) throw new Error('这个剧集没有给出可用的流地址（可能是付费或地区限制）')
   return streams
 }
 
-export async function resolveStreams(item, { qn = 120 } = {}) {
+// MAX_QUALITY 请求用的档位码：**请求一律要 120**（"这个账号能拿到的最全一档"），
+// 响应里带回来的就是整个阶梯；用户想看的其实是 preferQn——那一档在本地挑即可，
+// 所以"选清晰度"是零额外请求的。
+const MAX_QUALITY = 120
+
+export async function resolveStreams(item, { preferQn } = {}) {
   try {
-    // 先问接口：只有它会按 qn=120 去要"这个账号能拿到的最高清晰度"，
-    // __playinfo__ 里是播放器当前选的那一档（常常是 1080P）。
-    return item.kind === 'bangumi' ? await bangumiStreams(item, qn) : await ugcStreams(item, qn)
+    return item.kind === 'bangumi'
+      ? await bangumiStreams(item, MAX_QUALITY, preferQn)
+      : await ugcStreams(item, MAX_QUALITY, preferQn)
   } catch (error) {
-    const fallback = playinfoStreams(item)
+    const fallback = playinfoStreams(item, preferQn)
     if (fallback) return fallback
     throw error
   }

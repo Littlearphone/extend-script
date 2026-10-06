@@ -19,6 +19,13 @@ function loadModule(module) {
     const dataId = 'nihility-entry'
     const nihilityEntry = document.createElement('div')
     nihilityEntry.setAttribute('data-id', dataId)
+    // 内联关键样式，确保不依赖外部 CSS 加载时序
+    Object.assign(nihilityEntry.style, {
+      position: 'fixed',
+      inset: '0',
+      zIndex: '2147483647',
+      pointerEvents: 'none',
+    })
     document.body.appendChild(nihilityEntry)
     createApp(MAPPINGS[module]).mount(`[data-id="${dataId}"]`)
   }

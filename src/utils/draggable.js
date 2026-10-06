@@ -1,12 +1,43 @@
+// 拖拽范围的最小/最大值。
+//
+// ⚠️ `maxX`/`maxY` 在两种用法里含义不同，**不能一刀切**：
+//   - 浮动按钮（`viewportBound: true`）：上限是"视口减去自身尺寸"，**必须每次按当前视口重算**。
+//     初始化时算一次的话，窗口变大后按钮拖不到新的右边/下边（范围被锁在旧视口里）。
+//   - 滑块（Slider.vue）：`maxX` 是**轨道长度**，是语义范围不是视口范围，只能原样用。
+function boundsFor(element, options) {
+  const minX = options.minX || 0
+  const minY = options.minY || 0
+  if (options.viewportBound) {
+    const rect = element.getBoundingClientRect()
+    return {
+      minX,
+      minY,
+      maxX: Math.max(minX, window.innerWidth - rect.width),
+      maxY: Math.max(minY, window.innerHeight - rect.height),
+    }
+  }
+  return {
+    minX,
+    minY,
+    // 视口仍然是硬上限（滚动条出现、窗口缩小都算），只是上限本身不再随视口增长
+    maxX: typeof options.maxX === 'undefined' ? window.innerWidth : Math.min(options.maxX, window.innerWidth),
+    maxY: typeof options.maxY === 'undefined' ? window.innerHeight : Math.min(options.maxY, window.innerHeight),
+  }
+}
+
 export class DraggableElement {
   constructor(element, options) {
     const self = this
     this.options = options || {}
     this.element = typeof element === 'string' ? document.querySelector(element) : element
+
+    // 计算视口约束下的初始位置，避免小窗口时跑到视口外
+    const bounds = boundsFor(this.element, this.options)
     this.defaultPosition = Object.assign({}, {
-      x: options.initialX || 0,
-      y: options.initialY || 0
+      x: this.clamp(options.initialX || 0, bounds.minX, bounds.maxX),
+      y: this.clamp(options.initialY || 0, bounds.minY, bounds.maxY),
     })
+
     this.state = {
       eventToCoordinates(event) {
         return { x: event.clientX, y: event.clientY }
@@ -19,10 +50,7 @@ export class DraggableElement {
       },
       set pos(p) {
         const options = self.options
-        const minX = options.minX || 0
-        const minY = options.minY || 0
-        const maxX = typeof options.maxX === 'undefined' ? window.innerWidth : options.maxX
-        const maxY = typeof options.maxY === 'undefined' ? window.innerHeight : options.maxY
+        const { minX, minY, maxX, maxY } = boundsFor(self.element, options)
         const pos = {
           x: self.clamp(p.x, minX, maxX),
           y: self.clamp(p.y, minY, maxY),
@@ -118,9 +146,14 @@ export class DraggableElement {
 
 const draggableElements = []
 
-function relocateDraggableElements() {
+// 窗口尺寸变化后把元素拉回可见区域。
+//
+// 这里只处理"越界"，不做"跟随"：用户拖到哪儿是哪儿。四条边都要看——只判右下的话，
+// 窗口缩小到元素左边之外就会出现负坐标。赋值本身会经过 state.pos 的钳制。
+export function relocateDraggableElements() {
   draggableElements.forEach(item => {
     const bounds = item.element.getBoundingClientRect()
+    const { minX, minY } = boundsFor(item.element, item.options)
     const pos = Object.assign({}, item.state.pos)
     if (item.state.pos.x + bounds.width > window.innerWidth) {
       pos.x = window.innerWidth - bounds.width
@@ -128,6 +161,8 @@ function relocateDraggableElements() {
     if (item.state.pos.y + bounds.height > window.innerHeight) {
       pos.y = window.innerHeight - bounds.height
     }
+    pos.x = Math.max(pos.x, minX)
+    pos.y = Math.max(pos.y, minY)
     item.state.pos = pos
   })
 }

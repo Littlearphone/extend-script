@@ -1,31 +1,25 @@
 <template>
-  <Settings ref="settingsElement" @mounted="handleSettingsMounted" panel-width="300px" panel-height="300px">
-    <div class="nihility-config-item">
-      <Switch label="注入配置" v-model="injectConfig"/>
-    </div>
-    <div class="nihility-config-item" v-if="injectConfig">
-      <Switch label="网页全屏" v-model="fullWebScreen"/>
-    </div>
-    <div class="nihility-config-item" v-if="injectConfig && speedAdjustable">
-      <Slider label="倍数播放" v-model="playbackRate" step="0.05" min="0.5" max="5">
-        <template #tips="{value}">
-          {{ parseFloat(value).toFixed(2) }}x
-        </template>
-      </Slider>
-    </div>
-    <div class="nihility-config-item" v-if="downloadEntryVisible">
-      <button class="nihility-download-entry" @click="downloadDialogOpen = true">视频下载</button>
-    </div>
-  </Settings>
-  <VideoDownloadDialog v-if="downloadDialogOpen" @close="downloadDialogOpen = false"/>
+  <!-- 设置只从油猴面板菜单进（「脚本设置」）：浮动按钮在网页全屏时本来就够不着，
+       而菜单永远挡不住，还省掉一个会盖在视频上的浮层。 -->
+  <SettingsDialog v-if="settingsDialogOpen" title="脚本设置" @close="settingsDialogOpen = false">
+    <SettingsContent
+      v-model:inject-config="injectConfig"
+      v-model:full-web-screen="fullWebScreen"
+      v-model:playback-rate="playbackRate"
+      :speed-adjustable="speedAdjustable"
+      :show-download="downloadEntryVisible"
+      :download-text="downloadEntryText"
+      @open-download="openDownloadFromSettings"/>
+  </SettingsDialog>
+  <VideoDownloadDialog v-if="videoDownloadState.dialogOpen"/>
 </template>
 <script setup>
-import Slider from '../components/Slider.vue'
-import Switch from '../components/Switch.vue'
-import Settings from '../components/Settings.vue'
+import SettingsContent from '../components/SettingsContent.vue'
+import SettingsDialog from '../components/SettingsDialog.vue'
 import VideoDownloadDialog from '../components/VideoDownloadDialog.vue'
-import { computed, nextTick, onMounted, reactive, ref, shallowRef, watch } from 'vue'
-import { addGlobalDraggableElement, DraggableElement, relocateDraggableElements } from '../utils/draggable.js'
+import { computed, nextTick, onMounted, reactive, ref, watch } from 'vue'
+import { openDownloadDialog, videoDownloadState } from '../utils/bilibili-download-state.js'
+import { setMenuCommand } from '../utils/script-menu.js'
 
 const CONFIG_KEY = 'bilibili-hack-config'
 
@@ -33,11 +27,89 @@ const config = reactive(JSON.parse(GM_getValue(CONFIG_KEY, '{}')))
 const injectConfig = ref(config.injectConfig || false)
 const fullWebScreen = ref(config.fullWebScreen || false)
 const playbackRate = ref(config.playbackRate || 1.25)
-const speedAdjustable = ref(true)
-const settingsElement = shallowRef()
-const downloadDialogOpen = ref(false)
+// 直播没有倍速这回事，也就不该在设置里提供：直接按页面类型判。
+// （原来只想靠"看到直播间状态图标就关掉"，但直播页在 detectVideoPlaying 里提前 return，
+// 根本走不到那一步，于是 live 的设置里一直摆着滑杆。）
+const speedAdjustable = ref(location.hostname !== 'live.bilibili.com')
 // 只有 www.bilibili.com 的页面拿得到可下载的视频信息；直播与动态页不摆这个入口。
 const downloadEntryVisible = computed(() => location.hostname === 'www.bilibili.com')
+// 下载中就在这个按钮上显示 n/m——面板可能被收起来，所以进度来自共享状态而不是弹窗组件。
+const downloadEntryText = computed(() => videoDownloadState.running
+  ? `下载中 ${videoDownloadState.finished}/${videoDownloadState.total}`
+  : (videoDownloadState.finished ? `视频下载 · 已下 ${videoDownloadState.finished} 个` : '视频下载'))
+
+// 油猴面板里的菜单项（点扩展图标弹出的那个）。菜单是"当前标签页里活跃脚本注册了什么"，
+// 所以这里按页面挑：只在顶层窗口、且真是能下载的页面注册；文案顺带当进度用。
+//
+// 菜单只能放"文本 + 回调"，放不下滑块/输入框/表格，所以它的定位是**把该弹的框叫出来**：
+//   「视频下载」→ 下载列表弹窗；「脚本设置」→ 与浮动面板同一套控件（SettingsContent.vue）。
+const DOWNLOAD_MENU_KEY = 'bilibili-download'
+const SETTINGS_MENU_KEY = 'bilibili-settings'
+const settingsDialogOpen = ref(false)
+const downloadMenuName = computed(() => videoDownloadState.running
+  ? `视频下载（下载中 ${videoDownloadState.finished}/${videoDownloadState.total}）`
+  : '视频下载')
+
+function refreshScriptMenus() {
+  if (window.top !== window) {
+    return
+  }
+  // 「脚本设置」只要本视图挂上了、且设置弹窗真的显示得出来就注册（浮动按钮已经去掉，这是唯一入口）；
+  // 「视频下载」只在能拿到视频信息的页面注册。
+  // t.bilibili.com 不注册：那一页的 CSS 把整个 [data-id=nihility-entry] 藏了，弹窗根本显示不出来。
+  const host = location.hostname
+  const isVideoPage = host === 'www.bilibili.com' && /^\/(video|bangumi\/play)\//.test(location.pathname)
+  const settingsAvailable = isVideoPage || (host === 'live.bilibili.com' && location.pathname.length > 1)
+  if (settingsAvailable) {
+    setMenuCommand(SETTINGS_MENU_KEY, '脚本设置', openSettingsList, {
+      accessKey: 's',
+      title: '打开脚本设置（与浮动面板同一套）',
+      clickedFrame: true,
+    })
+  }
+  if (isVideoPage) {
+    setMenuCommand(DOWNLOAD_MENU_KEY, downloadMenuName.value, openDownloadList, {
+      accessKey: 'd',
+      title: '打开 B 站视频下载列表',
+      clickedFrame: true,
+    })
+  }
+}
+
+// 菜单点下去要真的能看见东西：
+//   - **网页全屏**（脚本自己开的那个，纯 CSS）不受影响；
+//   - **真·全屏**（Fullscreen API）时浏览器只把全屏元素画在最上层，我们的浮层在它底下 → 先退出全屏，
+//     否则用户看到的是"点了没反应"。退不出来也照样开，不因为这一步把功能卡死。
+async function exitFullscreenIfNeeded() {
+  if (!document.fullscreenElement) {
+    return
+  }
+  try {
+    await document.exitFullscreen()
+  } catch (error) {
+    logger.debug('退出全屏失败，仍然尝试打开弹窗')
+  }
+}
+
+async function openDownloadList() {
+  await exitFullscreenIfNeeded()
+  settingsDialogOpen.value = false
+  openDownloadDialog()
+}
+
+async function openSettingsList() {
+  await exitFullscreenIfNeeded()
+  settingsDialogOpen.value = true
+}
+
+// 弹窗里点「视频下载」：先收起设置框，免得两层叠着
+function openDownloadFromSettings() {
+  settingsDialogOpen.value = false
+  openDownloadDialog()
+}
+
+// 进度一变就把菜单文案改掉（同一条目走 id 更新，不会越挂越多条）
+watch(downloadMenuName, refreshScriptMenus)
 watch(injectConfig, value => {
   config.injectConfig = value
   GM_setValue(CONFIG_KEY, JSON.stringify({ ...config }))
@@ -195,6 +267,8 @@ function detectVideoPlaying() {
     video.play()
     return requestAnimationFrame(detectVideoPlaying)
   }
+  // www 上嵌的直播间播放器也要关掉倍速（live.bilibili.com 那条在函数开头就 return 了，
+  // 页面类型早就判过，这里只兜"宿主页是 www、放的是直播"这一种）
   if (document.querySelector('.web-player-icon-roomStatus svg')) {
     speedAdjustable.value = false
   }
@@ -227,34 +301,6 @@ function detectVideoPlaying() {
     return setTimeout(listeningVideoFinish, 100)
   }
   return requestAnimationFrame(detectVideoPlaying)
-}
-
-class BilibiliSettingsButton extends DraggableElement {
-  dragFinish() {
-    nextTick(() => settingsElement.value.updatePosition())
-  }
-}
-
-function handleSettingsMounted() {
-  requestAnimationFrame(() => {
-    const settingsButton = settingsElement.value.button
-    const bounds = settingsButton.getBoundingClientRect()
-    const buttonW = bounds.width || 50
-    const buttonH = bounds.height || 50
-    const initX = 80
-    const initY = Math.max(0, window.innerHeight - 80 - buttonH)
-    addGlobalDraggableElement(new BilibiliSettingsButton(settingsButton, {
-      initialX: initX,
-      initialY: initY,
-      minX: 0, maxX: window.innerWidth - buttonW,
-      minY: 0, maxY: window.innerHeight - buttonH
-    }))
-    settingsElement.value.updatePosition()
-    settingsElement.value.closePanel()
-
-    // 等 B 站自身布局稳定后（约 3s），做一次性的视口修正，避免被挤出可见区域
-    setTimeout(() => relocateDraggableElements(), 3000)
-  })
 }
 
 function detectTemporaryPlaying() {
@@ -299,6 +345,8 @@ function watchRecommendationOverlay() {
 
 function mounted() {
   logger.debug('[]~(￣▽￣)~* 脚本已准备就绪')
+  // SPA 跳转（pushState）也会走到这儿，所以面板菜单跟着当前页面重新注册
+  refreshScriptMenus()
   if (location.hostname === 'www.bilibili.com' || (location.hostname === 'live.bilibili.com' && location.pathname.length > 1)) {
     livePollingActive = true
     detectVideoPlaying()
@@ -447,7 +495,19 @@ body[live-bilibili-com] {
   &:has([class*='video_playerFullScreen__']),
   &:has(.mode-webscreen,[class*=video_playerFullScreen]) {
     [data-id=nihility-entry] {
-      display: none;
+      // 只藏"设置按钮 + 它的面板"，**不要整个入口 display:none**：本脚本自己会自动开网页全屏，
+      // 那时按钮本来就够不着；而下载弹窗/小条正是全屏时唯一能用的入口（面板菜单叫出来的就是它），
+      // 一并藏掉的话菜单点了也什么都不显示。
+      .nihility-config-button,
+      .nihility-config-panel {
+        display: none;
+      }
+
+      // 收起后的胶囊只在没事的时候显示：它固定贴在右下角，全屏时会压住视频/进度条（用户实报）。
+      // 全屏里想知道进度就看油猴菜单的文案（「视频下载（下载中 2/5）」）。
+      .nihility-download-mini {
+        display: none;
+      }
     }
   }
 }
@@ -455,21 +515,6 @@ body[live-bilibili-com] {
 body[nested-window] {
   [data-id=nihility-entry] {
     display: none;
-  }
-}
-</style>
-<style lang="scss" scoped>
-.nihility-download-entry {
-  width: 100%;
-  color: #fff;
-  cursor: pointer;
-  padding: .45em 1em;
-  border-radius: 6px;
-  border: 1px solid #409eff66;
-  background-color: #409eff33;
-
-  &:hover {
-    background-color: #409eff66;
   }
 }
 </style>

@@ -5,16 +5,19 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "serve": "vite preview"
+    "watch": "vite build --watch",
+    "serve": "vite preview",
+    "ship": "node ship.mjs"
   },
   "dependencies": {
     "vue": "latest"
   },
   "devDependencies": {
     "@vitejs/plugin-vue": "latest",
-    "ssh2-sftp-client": "latest",
     "moment": "latest",
+    "playwright": "^1.61.0",
     "sass": "latest",
+    "ssh2-sftp-client": "latest",
     "vite": "latest"
   }
 }

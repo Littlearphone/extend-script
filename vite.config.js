@@ -2,17 +2,30 @@ import moment from 'moment'
 import { defineConfig } from 'vite'
 import vue from '@vitejs/plugin-vue'
 // https://vitejs.dev/config/
+
+// 更新源只有一个：GitHub Pages（`pnpm ship` 推上去之后油猴自己拉）。
+// 本地调试**不需要**第二条 URL：油猴的「File → Track from disk」直接盯磁盘上这份产物即可
+// （见 CLAUDE.md「脚本怎么到油猴手里」），所以这里没有第二套地址、端口或输出目录。
+const UPDATE_URL = 'https://littlearphone.github.io/extend-script/nihility.umd.user.js'
+
 const monthStart = moment().startOf('month').toDate()
 monthStart.setHours(0, 0, 0, 0)
-const date = new Date()
-const description = `// ==UserScript==
+
+// 版本号**必须每次产出时算**（不能写在 config 顶层）：`vite build --watch` 只解析一次配置，
+// 顶层算的话每轮重建都是同一个版本号。形如 2026.9.489491.250（年.月索引.月内秒.毫秒）。
+const buildVersion = () => {
+  const now = new Date()
+  const elapsed = now.getTime() - monthStart.getTime()
+  return `${now.getFullYear()}.${now.getMonth()}.${Math.floor(elapsed / 1000)}.${elapsed % 1000}`
+}
+const description = (version) => `// ==UserScript==
 // @name         裁之刃-无
 // @namespace    com.littelearphone.nihility
-// @version      ${date.getFullYear()}.${date.getMonth()}.${((date.getTime() - monthStart.getTime()) / 1000).toFixed(0)}
+// @version      ${version}
 // @description  群体攻击技能
 // @author       littelearphone
-// @downloadURL  https://littlearphone.github.io/extend-script/nihility.umd.user.js
-// @updateURL    https://littlearphone.github.io/extend-script/nihility.umd.user.js
+// @downloadURL  ${UPDATE_URL}
+// @updateURL    ${UPDATE_URL}
 // @require      https://code.jquery.com/jquery-3.7.1.slim.min.js
 // @include      /https?://t.bilibili.com/.*/
 // @include      /https?://juejin.cn/post/.*/
@@ -47,6 +60,9 @@ const description = `// ==UserScript==
 // @grant        GM.addStyle
 // @grant        GM_addStyle
 // @grant        GM_xmlhttpRequest
+// 面板菜单（点油猴图标弹出的那个面板）：按页面注册不同条目，见 src/utils/script-menu.js
+// @grant        GM_registerMenuCommand
+// @grant        GM.registerMenuCommand
 // @run-at       document-start
 // ==/UserScript==
 `
@@ -71,7 +87,9 @@ export default defineConfig(({ mode }) => {
   return {
     plugins: [vue()],
     define: {
-      'process.env.NODE_ENV': JSON.stringify(mode),
+      // 只有 dev 才是 development：构建（含 --watch）都按生产构建，
+      // 否则 Vue 会带上开发期告警与未压缩的响应式实现。
+      'process.env.NODE_ENV': JSON.stringify(mode === 'development' ? 'development' : 'production'),
     },
     css: {
       preprocessorOptions: {
@@ -98,7 +116,7 @@ export default defineConfig(({ mode }) => {
                 [`nihility-script.css`]: { source: rawCss },
                 [`nihility.umd.user.js`]: component
               } = bundle
-              component.code = description + inlineCss(rawCss) + component.code
+              component.code = description(buildVersion()) + inlineCss(rawCss) + component.code
               // remove from final bundle
               delete bundle[`nihility-script.css`]
             }

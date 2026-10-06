@@ -35,7 +35,7 @@ import { loading } from '../utils/loading.js'
 import Settings from '../components/Settings.vue'
 import { Pagination } from '../utils/pagination.js'
 import { nextTick, onMounted, reactive, ref, shallowRef, watch } from 'vue'
-import { addGlobalDraggableElement, DraggableElement } from '../utils/draggable.js'
+import { addGlobalDraggableElement, DraggableElement, relocateDraggableElements } from '../utils/draggable.js'
 
 const CONFIG_KEY = 'baidu-hack-config'
 
@@ -169,21 +169,27 @@ class BaiduSettingsButton extends DraggableElement {
 }
 
 function handleSettingsMounted() {
-  nextTick(() => {
+  requestAnimationFrame(() => {
     if (isNestedWindow.value) {
       return logger.debug('百度搜索分页加载完成')
     }
     logger.debug('初始化百度搜索设置按钮')
     const settingsButton = settingsElement.value.button
     const bounds = settingsButton.getBoundingClientRect()
+    const buttonH = bounds.height || 50
+    const initX = 80
+    const initY = Math.max(0, window.innerHeight - 80 - buttonH)
     addGlobalDraggableElement(new BaiduSettingsButton(settingsButton, {
-      initialX: 80,
-      initialY: window.innerHeight - 80 - bounds.height,
-      minX: 0, maxX: window.innerWidth - bounds.width,
-      minY: 0, maxY: window.innerHeight - bounds.height
+      initialX: initX,
+      initialY: initY,
+      minX: 0, minY: 0,
+      // 上限按当前视口重算：写死 maxX/maxY 的话，窗口变大后按钮拖不到新的右边/下边
+      viewportBound: true,
     }))
     settingsElement.value.updatePosition()
     settingsElement.value.closePanel()
+    // 等页面布局稳定后做一次性视口修正
+    setTimeout(() => relocateDraggableElements(), 3000)
   })
   pagination.value.offScrollListener()
   requestAnimationFrame(detectHeight)

@@ -98,9 +98,16 @@ function computeHorizontalPosition(x: number, width: number, isRight: boolean) {
 
 const boundCache: any = {}
 
+// 面板收起时 `transform: scale(0)`，量到的宽高是 0——那是"这次量不到"，不是"面板变小了"，
+// 所以只忽略 0、其余每次都**覆盖**。用 Math.max 缓存的话尺寸只增不减，
+// 窗口缩小后仍按旧的大尺寸决定面板摆哪边，就更容易溢到视口外。
 function updateBoundCache(bound: any) {
-  boundCache.width = Math.max(boundCache.width || 0, bound.width)
-  boundCache.height = Math.max(boundCache.height || 0, bound.height)
+  if (bound.width > 0) {
+    boundCache.width = bound.width
+  }
+  if (bound.height > 0) {
+    boundCache.height = bound.height
+  }
   return boundCache
 }
 
@@ -225,6 +232,16 @@ body:not([nested-window]) [data-id="nihility-entry"] {
     }
   }
 
+  // 一行设置项的长相：**挂在入口层而不是面板里面** —— 设置弹窗（SettingsDialog）里是同一套行，
+  // 挂在 .nihility-config-panel 下面的话弹窗里那些行就掉样式了。
+  .nihility-config-item {
+    padding: .5em;
+    display: flex;
+    align-items: center;
+    width: calc(100% - 1em);
+    justify-content: space-between;
+  }
+
   .nihility-config-panel {
     padding: 1em;
     font-size: 14px;
@@ -244,14 +261,6 @@ body:not([nested-window]) [data-id="nihility-entry"] {
       overflow-y: auto;
       overflow-x: hidden;
       background-color: #00000080;
-
-      .nihility-config-item {
-        padding: .5em;
-        display: flex;
-        align-items: center;
-        width: calc(100% - 1em);
-        justify-content: space-between;
-      }
     }
 
     &.is-open {

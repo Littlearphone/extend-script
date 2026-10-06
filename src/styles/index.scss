@@ -1,3 +1,13 @@
+// [data-id="nihility-entry"] 由 main.js 原生创建，非 Vue 模板内元素
+// 样式必须放在非 scoped 的全局样式表中，否则 scoped [data-v-xxx] 标记无法匹配
+body:not([nested-window]) [data-id="nihility-entry"] {
+  inset: 0;
+  z-index: 2147483647;
+  position: fixed;
+  pointer-events: none;
+  --draggable-element-translate: translate(0, 0);
+}
+
 ::-webkit-scrollbar {
   width: 10px;
   height: 10px;
