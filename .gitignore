@@ -18,8 +18,11 @@ tests/
 # 环境相关 / 独立脚本：有意不入库
 # publish.js 按本机 nginx 路径与远端 SFTP 走，换台机器就得改
 publish.js
-# 另一个独立用户脚本（与本项目无关）
-ohohoho.js
+# 另一个独立项目（自带 git 仓库，见 ohohoho/）
+ohohoho/
+
+# AI 助手/会话工具的本地状态（聊天记录之类），公开仓库里不该有
+.dsh/
 
 *.log
 .DS_Store
