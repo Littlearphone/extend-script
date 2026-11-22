@@ -361,16 +361,38 @@ window.addEventListener('beforeunload', () => {
   livePollingActive = false
 })
 
+// 切走那一刻视频是否在播。恢复可见时要重跑检测的**唯一**理由是把在播的视频接回去
+// （RAF 在后台被节流、`ended` 监听可能没挂上），而不是把用户手动暂停的视频抢回来播：
+// detectVideoPlaying 一进去就是"paused 就 play()、不在网页全屏就点全屏"，
+// 无条件重跑等于每次切窗口都重新开播一次、并把 B 站后台回收掉的播放器再拉进网页全屏。
+let resumeOnVisible = false
+
 // 标签页恢复可见时重新检测，并关闭可能已弹出的推荐倒计时
 document.addEventListener('visibilitychange', () => {
-  if (document.hidden) return
-  // 关闭后台时弹出的推荐倒计时
+  if (document.hidden) {
+    const video = document.querySelector('video')
+    // ended 的也算「没在播」：对已结束的 video 调 play() 是从头重播
+    resumeOnVisible = !!video && !video.paused && !video.ended
+    return
+  }
+  // 关闭后台时弹出的推荐倒计时（与播不播无关，看到就关）
   const cancelRelated = document.querySelector('.bpx-player-ending-related-item-cancel')
   if (cancelRelated) cancelRelated.click()
-  // 恢复视频检测循环（RAF 在后台被节流）
-  if (livePollingActive) {
+  if (!livePollingActive) {
+    return
+  }
+  // 直播页不重跑：那边 detectVideoPlaying 在直播分支就 return 了，没有自动开播这一段，
+  // 重跑只剩副作用——把用户手动展开的侧边栏再收起来、手动选的清晰度又拽回原画。
+  // 这套布置是"一次性的"，用户切回来要的是"还是我离开时的样子"。
+  if (location.hostname === 'live.bilibili.com') {
+    logger.debug('恢复可见：直播页不重跑布置')
+    return
+  }
+  if (resumeOnVisible) {
     handlingVideoEnded = false
     detectVideoPlaying()
+  } else {
+    logger.debug('恢复可见：切走时本就没在播，不重跑检测')
   }
 })
 
