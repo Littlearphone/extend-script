@@ -25,10 +25,14 @@ function readConcurrencyPreference() {
 
 // 分片并发（不是"轨并发"：视频轨与音频轨**永远并行**下，因为音频小一个量级，
 // 串行的话那段就是纯白等）。这里的值只决定**单个文件的内部**切不切分片。
+// 上限按 host 算：和播放器同一个 host 只开 2 条，不同 host 放开到 5（见 bilibili-download.js）。
 export const CONCURRENCY_OPTIONS = [
   { value: 1, label: '不分片' },
   { value: 2, label: '2' },
   { value: 4, label: '4' },
+  { value: 5, label: '5' },
+  // 只在"有多个镜像 host"时才有意义：单个 host 最多 5 条，多出来的 worker 只是排队
+  { value: 8, label: '8' },
 ]
 
 // 可选的档位（与 bilibili.js 的 QUALITY_LABELS 对齐）：用户看到的是这一份，别再各写一份
