@@ -88,18 +88,41 @@ const topic = reactive({
 const b64 = reactive({ open: false, x: 0, y: 0, label: '', text: '', result: '' })
 
 // ---- 主题 ----
-// 卡片和弹窗是自绘的，必须自己跟着页面走：V2EX 本身没有暗色，用户看到的黑底通常来自
-// 浏览器扩展或系统暗色模式，所以"自动"要**先量页面实际背景**，量不出来再看系统偏好。
-const THEME_KEY = 'v2ex-theme'
-const themeMode = ref(typeof GM_getValue === 'function' ? (GM_getValue(THEME_KEY, 'auto') || 'auto') : 'auto')
+// **页面黑底不是我们搞的，是 V2EX 自带的整站主题**：它把 `localStorage.siteTheme`
+// (light/dark/auto) 和 `setSiteThemeMedia()` 配合，用 media 属性开关 night.css。
+// 所以这里的按钮要驱动**站点自己的**那套，而不是只给自己换皮——否则点"深色"只有卡片变，
+// 页面纹丝不动，看着就像坏的。
+const THEME_KEY = 'siteTheme'
+const themeMode = ref('auto')
 const isDark = ref(false)
 let darkMedia = null
 
-const themeLabel = computed(() => (themeMode.value === 'auto' ? '自动' : (isDark.value ? '深色' : '浅色')))
-const themeTitle = computed(() => `主题：${themeLabel.value}（点击切换 自动 / 浅色 / 深色）`)
+const themeLabel = computed(() => (themeMode.value === 'auto' ? '自动' : (themeMode.value === 'dark' ? '深色' : '浅色')))
+const themeTitle = computed(() => `整站主题：${themeLabel.value}（点击切换 自动 / 浅色 / 深色）`)
 
+function pageWindow() {
+  return typeof unsafeWindow === 'undefined' ? window : unsafeWindow
+}
+
+// V2EX 自己的切换函数（inline script 里的全局函数）：它会把 dataset 和各 <link media> 一起改
+function siteThemeApi() {
+  const api = pageWindow()?.setSiteThemeMedia
+  return typeof api === 'function' ? api : null
+}
+
+function readStoredTheme() {
+  try {
+    const value = localStorage.getItem(THEME_KEY)
+    if (['light', 'dark', 'auto'].includes(value)) return value
+  } catch (error) {
+    // 存储被禁：退回 dataset
+  }
+  const fromDom = document.documentElement.dataset.siteTheme
+  return ['light', 'dark', 'auto'].includes(fromDom) ? fromDom : 'auto'
+}
+
+// 兜底：页面函数拿不到时（V2EX 改版），自己量页面背景判断暗色
 function backgroundIsDark() {
-  // 从 body 一路往上找第一个有实色背景的，算它的亮度
   let node = document.body
   while (node) {
     const color = getComputedStyle(node).backgroundColor
@@ -116,18 +139,27 @@ function backgroundIsDark() {
 }
 
 function applyTheme() {
-  const dark = themeMode.value === 'dark'
-    ? true
-    : themeMode.value === 'light'
-      ? false
-      : (backgroundIsDark() ?? (darkMedia?.matches ?? false))
-  isDark.value = dark
-  document.body.setAttribute('v2ex-theme', dark ? 'dark' : 'light')
+  const api = siteThemeApi()
+  let dark
+  if (api) {
+    // 返回值就是"现在是不是暗色"（它内部用 media 判断）
+    dark = api(themeMode.value)
+  } else {
+    document.documentElement.dataset.siteTheme = themeMode.value
+    dark = themeMode.value === 'dark'
+      || (themeMode.value === 'auto' && (darkMedia?.matches ?? backgroundIsDark() ?? false))
+  }
+  isDark.value = !!dark
+  document.body.setAttribute('v2ex-theme', isDark.value ? 'dark' : 'light')
 }
 
 function cycleTheme() {
   themeMode.value = themeMode.value === 'auto' ? 'light' : themeMode.value === 'light' ? 'dark' : 'auto'
-  if (typeof GM_setValue === 'function') GM_setValue(THEME_KEY, themeMode.value)
+  try {
+    localStorage.setItem(THEME_KEY, themeMode.value)
+  } catch (error) {
+    // 存不下就只影响这次
+  }
   applyTheme()
 }
 
@@ -304,6 +336,8 @@ onMounted(() => {
   // 列表页才接管点击；帖子页保持原样（否则"下一页"/引用链接也会被弹窗吃掉）
   listPage = !!document.querySelector('#Main .cell.item')
   document.body.setAttribute('v2ex-view', listPage ? 'list' : 'topic')
+  // 跟着站点当前的设置走（V2EX 自己也有主题选项，别各记各的）
+  themeMode.value = readStoredTheme()
   applyTheme()
   // 系统主题变了只影响"自动"模式
   darkMedia = window.matchMedia?.('(prefers-color-scheme: dark)')
@@ -340,16 +374,19 @@ html:has([v2ex-view=list]) {
     .cell.item {
       margin-bottom: 10px;
       padding: 14px 16px;
-      background: #fff;
+      // 颜色**一律用 V2EX 自己的 CSS 变量**：浅色/深色两套主题都在 :root 上定义了同名变量
+      // （浅色 --box-background-color:#fff，深色 #18222d），跟着站点换，别再自己配一套。
+      background: var(--box-background-color, #fff);
+      color: var(--box-foreground-color, #1a1a1a);
       border-radius: 10px;
-      border: 1px solid #0000000f;
+      border: 1px solid var(--box-border-color, #0000000f);
       box-shadow: 0 1px 2px #0000000a;
       transition: transform .12s ease, box-shadow .12s ease, border-color .12s ease;
       cursor: pointer;
 
       &:hover {
         transform: translateY(-1px);
-        border-color: #0000001a;
+        border-color: var(--box-border-focus-color, #0000001a);
         box-shadow: 0 6px 18px #00000012;
       }
 
@@ -362,11 +399,11 @@ html:has([v2ex-view=list]) {
       .item_title a {
         font-size: 16px;
         font-weight: 600;
-        color: #1a1a1a;
+        color: var(--box-foreground-color, #1a1a1a);
         text-decoration: none;
 
         &:hover {
-          color: #333;
+          color: var(--link-hover-color, #333);
           text-decoration: underline;
         }
       }
@@ -375,16 +412,17 @@ html:has([v2ex-view=list]) {
         display: inline-block;
         margin-top: 6px;
         font-size: 12.5px;
-        color: #8d8d8d;
+        color: var(--color-gray, #8d8d8d);
 
         a {
-          color: #6a6a6a;
+          color: var(--color-gray, #6a6a6a);
         }
 
         .node {
           padding: 1px 6px;
           border-radius: 4px;
-          background: #f3f3f3;
+          color: inherit;
+          background: var(--box-background-alt-color, #f3f3f3);
         }
       }
 
@@ -395,9 +433,9 @@ html:has([v2ex-view=list]) {
         padding: 2px 7px;
         font-size: 12px;
         text-align: center;
-        color: #4f86d6;
+        color: var(--link-color, #4f86d6);
         border-radius: 999px;
-        background: #4f86d614;
+        background: #4f86d61f;
       }
     }
   }
@@ -423,8 +461,8 @@ html:has([v2ex-view=list]) {
   max-height: 86vh;
   overflow: hidden;
   font-size: 14px;
-  color: #1a1a1a;
-  background: #fff;
+  color: var(--box-foreground-color, #1a1a1a);
+  background: var(--box-background-color, #fff);
   border-radius: 12px;
   box-shadow: 0 18px 60px #00000040;
 }
@@ -436,7 +474,7 @@ html:has([v2ex-view=list]) {
   padding: 14px 16px;
   align-items: flex-start;
   justify-content: space-between;
-  border-bottom: 1px solid #0000000f;
+  border-bottom: 1px solid var(--box-border-color, #0000000f);
 
   .v2ex-title {
     font-size: 17px;
@@ -454,7 +492,7 @@ html:has([v2ex-view=list]) {
 
   .v2ex-plain-link {
     font-size: 12px;
-    color: #4f86d6;
+    color: var(--link-color, #4f86d6);
     white-space: nowrap;
     text-decoration: none;
 
@@ -469,15 +507,15 @@ html:has([v2ex-view=list]) {
     height: 26px;
     font-size: 18px;
     line-height: 1;
-    color: #666;
+    color: var(--color-gray, #666);
     cursor: pointer;
     border: 0;
     border-radius: 6px;
-    background: #0000000a;
+    background: var(--box-background-alt-color, #0000000a);
 
     &:hover {
-      color: #111;
-      background: #00000014;
+      color: var(--box-foreground-color, #111);
+      background: var(--box-background-hover-color, #00000014);
     }
   }
 }
@@ -486,8 +524,8 @@ html:has([v2ex-view=list]) {
   flex: none;
   padding: 8px 16px;
   font-size: 12px;
-  color: #8d8d8d;
-  border-bottom: 1px solid #0000000f;
+  color: var(--color-gray, #8d8d8d);
+  border-bottom: 1px solid var(--box-border-color, #0000000f);
 }
 
 .v2ex-body {
@@ -499,7 +537,7 @@ html:has([v2ex-view=list]) {
 
 .v2ex-loading {
   padding: 40px 0;
-  color: #999;
+  color: var(--color-gray, #999);
   text-align: center;
 
   &.is-error {
@@ -520,7 +558,7 @@ html:has([v2ex-view=list]) {
   }
 
   a {
-    color: #4f86d6;
+    color: var(--link-color, #4f86d6);
     word-break: break-all;
   }
 
@@ -529,14 +567,14 @@ html:has([v2ex-view=list]) {
     overflow: auto;
     font-size: 12.5px;
     border-radius: 6px;
-    background: #f6f6f6;
+    background: var(--box-background-alt-color, #f6f6f6);
   }
 
   blockquote {
     margin: 8px 0;
     padding: 4px 12px;
-    color: #666;
-    border-left: 3px solid #e0e0e0;
+    color: var(--color-gray, #666);
+    border-left: 3px solid var(--box-border-color, #e0e0e0);
   }
 }
 
@@ -546,12 +584,12 @@ html:has([v2ex-view=list]) {
 }
 
 .v2ex-replies {
-  border-top: 1px solid #0000000f;
+  border-top: 1px solid var(--box-border-color, #0000000f);
 }
 
 .v2ex-reply {
   padding: 12px 0;
-  border-bottom: 1px solid #00000008;
+  border-bottom: 1px solid var(--box-border-color, #00000008);
 
   &:last-child {
     border-bottom: 0;
@@ -567,7 +605,7 @@ html:has([v2ex-view=list]) {
 
   .v2ex-reply-author {
     font-weight: 600;
-    color: #333;
+    color: var(--box-foreground-color, #333);
     text-decoration: none;
 
     &:hover {
@@ -576,11 +614,11 @@ html:has([v2ex-view=list]) {
   }
 
   .v2ex-reply-floor {
-    color: #4f86d6;
+    color: var(--link-color, #4f86d6);
   }
 
   .v2ex-reply-time {
-    color: #aaa;
+    color: var(--color-gray, #aaa);
   }
 }
 
@@ -706,139 +744,4 @@ html:has([v2ex-view=list]) {
   }
 }
 
-// ---------- 暗色 ----------
-// 卡片和弹窗都是自绘的，必须显式给一套暗色；页面本身被扩展/系统变黑时，
-// 白底卡片会特别刺眼。
-html:has([v2ex-theme=dark]) {
-  #Main .cell.item {
-    background: #1e1e23;
-    border-color: #ffffff14;
-    box-shadow: none;
-
-    &:hover {
-      border-color: #ffffff29;
-      box-shadow: 0 6px 18px #0000004d;
-    }
-
-    .item_title a {
-      color: #e8e8e8;
-
-      &:hover {
-        color: #fff;
-      }
-    }
-
-    .topic_info {
-      color: #9a9a9a;
-
-      a {
-        color: #b4b4b4;
-      }
-
-      .node {
-        color: #cfcfcf;
-        background: #ffffff14;
-      }
-    }
-
-    .count_livid {
-      color: #7fb0ff;
-      background: #7fb0ff1f;
-    }
-  }
-
-  .v2ex-modal {
-    color: #e6e6e6;
-    background: #1e1e23;
-    box-shadow: 0 18px 60px #00000099;
-  }
-
-  .v2ex-head {
-    border-bottom-color: #ffffff14;
-
-    .v2ex-plain-link {
-      color: #7fb0ff;
-    }
-
-    .v2ex-close {
-      color: #bbb;
-      background: #ffffff14;
-
-      &:hover {
-        color: #fff;
-        background: #ffffff26;
-      }
-    }
-  }
-
-  .v2ex-meta {
-    color: #9a9a9a;
-    border-bottom-color: #ffffff14;
-  }
-
-  .v2ex-content,
-  .v2ex-reply-body {
-    a {
-      color: #7fb0ff;
-    }
-
-    pre {
-      background: #ffffff0f;
-    }
-
-    blockquote {
-      color: #a8a8a8;
-      border-left-color: #ffffff26;
-    }
-  }
-
-  .v2ex-replies {
-    border-top-color: #ffffff14;
-  }
-
-  .v2ex-reply {
-    border-bottom-color: #ffffff0a;
-  }
-
-  .v2ex-reply-head {
-    .v2ex-reply-author {
-      color: #dcdcdc;
-    }
-
-    .v2ex-reply-floor {
-      color: #7fb0ff;
-    }
-
-    .v2ex-reply-time {
-      color: #8a8a8a;
-    }
-  }
-
-  .v2ex-body-foot {
-    color: #8a8a8a;
-
-    a {
-      color: #7fb0ff;
-    }
-  }
-
-  .v2ex-loading {
-    color: #9a9a9a;
-
-    &.is-error {
-      color: #ff8a8a;
-    }
-  }
-
-  .v2ex-b64-panel {
-    color: #e6e6e6;
-    background: #23232a;
-
-    .v2ex-b64-actions button {
-      color: #7fb0ff;
-      border-color: #7fb0ff40;
-      background: #7fb0ff1a;
-    }
-  }
-}
 </style>
