@@ -1,4 +1,10 @@
 <template>
+  <!-- 主题切换：贴右侧边缘竖着放，不挡内容；点一下在 自动 → 浅色 → 深色 之间切 -->
+  <button class="v2ex-theme" :class="{ 'is-dark': isDark }" :title="themeTitle" @click="cycleTheme">
+    <span class="v2ex-theme-icon">{{ themeMode === 'auto' ? 'A' : (isDark ? '☾' : '☀') }}</span>
+    <span class="v2ex-theme-text">{{ themeLabel }}</span>
+  </button>
+
   <!-- 卡片化是纯 CSS（不动 V2EX 的 DOM，分页/排序都不受影响），这里只放两样东西：
        弹窗看帖、以及选中 base64 时那个小浮条。 -->
   <div class="v2ex-mask" v-if="topicOpen" @pointerdown.self="closeTopic" @click.self="closeTopic">
@@ -53,7 +59,7 @@
 </template>
 
 <script setup>
-import { onBeforeUnmount, onMounted, reactive, ref, nextTick } from 'vue'
+import { computed, onBeforeUnmount, onMounted, reactive, ref, nextTick } from 'vue'
 
 // 列表里的帖子链接：/t/1259685、/t/1259685#reply35 都算
 const TOPIC_PATH = /^\/t\/(\d+)/
@@ -80,6 +86,50 @@ const topic = reactive({
 })
 
 const b64 = reactive({ open: false, x: 0, y: 0, label: '', text: '', result: '' })
+
+// ---- 主题 ----
+// 卡片和弹窗是自绘的，必须自己跟着页面走：V2EX 本身没有暗色，用户看到的黑底通常来自
+// 浏览器扩展或系统暗色模式，所以"自动"要**先量页面实际背景**，量不出来再看系统偏好。
+const THEME_KEY = 'v2ex-theme'
+const themeMode = ref(typeof GM_getValue === 'function' ? (GM_getValue(THEME_KEY, 'auto') || 'auto') : 'auto')
+const isDark = ref(false)
+let darkMedia = null
+
+const themeLabel = computed(() => (themeMode.value === 'auto' ? '自动' : (isDark.value ? '深色' : '浅色')))
+const themeTitle = computed(() => `主题：${themeLabel.value}（点击切换 自动 / 浅色 / 深色）`)
+
+function backgroundIsDark() {
+  // 从 body 一路往上找第一个有实色背景的，算它的亮度
+  let node = document.body
+  while (node) {
+    const color = getComputedStyle(node).backgroundColor
+    const match = color.match(/rgba?\(([^)]+)\)/)
+    if (match) {
+      const [r, g, b, a = '1'] = match[1].split(',').map(part => part.trim())
+      if (Number(a) > 0.1) {
+        return (0.2126 * Number(r) + 0.7152 * Number(g) + 0.0722 * Number(b)) < 128
+      }
+    }
+    node = node.parentElement
+  }
+  return null
+}
+
+function applyTheme() {
+  const dark = themeMode.value === 'dark'
+    ? true
+    : themeMode.value === 'light'
+      ? false
+      : (backgroundIsDark() ?? (darkMedia?.matches ?? false))
+  isDark.value = dark
+  document.body.setAttribute('v2ex-theme', dark ? 'dark' : 'light')
+}
+
+function cycleTheme() {
+  themeMode.value = themeMode.value === 'auto' ? 'light' : themeMode.value === 'light' ? 'dark' : 'auto'
+  if (typeof GM_setValue === 'function') GM_setValue(THEME_KEY, themeMode.value)
+  applyTheme()
+}
 
 function topicIdOf(href) {
   try {
@@ -254,6 +304,12 @@ onMounted(() => {
   // 列表页才接管点击；帖子页保持原样（否则"下一页"/引用链接也会被弹窗吃掉）
   listPage = !!document.querySelector('#Main .cell.item')
   document.body.setAttribute('v2ex-view', listPage ? 'list' : 'topic')
+  applyTheme()
+  // 系统主题变了只影响"自动"模式
+  darkMedia = window.matchMedia?.('(prefers-color-scheme: dark)')
+  darkMedia?.addEventListener?.('change', () => {
+    if (themeMode.value === 'auto') applyTheme()
+  })
   document.addEventListener('click', onDocumentClick)
   document.addEventListener('mouseup', onMouseUp)
   document.addEventListener('keydown', onKeydown)
@@ -266,6 +322,7 @@ onBeforeUnmount(() => {
   document.removeEventListener('keydown', onKeydown)
   document.removeEventListener('pointerdown', onPointerDownOutside)
   document.body.removeAttribute('v2ex-view')
+  document.body.removeAttribute('v2ex-theme')
 })
 </script>
 
@@ -604,6 +661,183 @@ html:has([v2ex-view=list]) {
       &:hover {
         background: #4f86d626;
       }
+    }
+  }
+}
+
+// ---------- 主题切换按钮 ----------
+.v2ex-theme {
+  position: fixed;
+  top: 50%;
+  right: 10px;
+  z-index: 3;
+  display: flex;
+  gap: 4px;
+  align-items: center;
+  padding: 6px 9px;
+  font-size: 12px;
+  color: #555;
+  cursor: pointer;
+  pointer-events: auto;
+  border: 1px solid #00000014;
+  border-radius: 999px;
+  background: #ffffffe6;
+  transform: translateY(-50%);
+  box-shadow: 0 6px 18px #0000001f;
+  backdrop-filter: blur(6px);
+
+  &:hover {
+    color: #111;
+  }
+
+  .v2ex-theme-icon {
+    font-size: 13px;
+    line-height: 1;
+  }
+
+  &.is-dark {
+    color: #d8d8d8;
+    border-color: #ffffff1f;
+    background: #26262be6;
+
+    &:hover {
+      color: #fff;
+    }
+  }
+}
+
+// ---------- 暗色 ----------
+// 卡片和弹窗都是自绘的，必须显式给一套暗色；页面本身被扩展/系统变黑时，
+// 白底卡片会特别刺眼。
+html:has([v2ex-theme=dark]) {
+  #Main .cell.item {
+    background: #1e1e23;
+    border-color: #ffffff14;
+    box-shadow: none;
+
+    &:hover {
+      border-color: #ffffff29;
+      box-shadow: 0 6px 18px #0000004d;
+    }
+
+    .item_title a {
+      color: #e8e8e8;
+
+      &:hover {
+        color: #fff;
+      }
+    }
+
+    .topic_info {
+      color: #9a9a9a;
+
+      a {
+        color: #b4b4b4;
+      }
+
+      .node {
+        color: #cfcfcf;
+        background: #ffffff14;
+      }
+    }
+
+    .count_livid {
+      color: #7fb0ff;
+      background: #7fb0ff1f;
+    }
+  }
+
+  .v2ex-modal {
+    color: #e6e6e6;
+    background: #1e1e23;
+    box-shadow: 0 18px 60px #00000099;
+  }
+
+  .v2ex-head {
+    border-bottom-color: #ffffff14;
+
+    .v2ex-plain-link {
+      color: #7fb0ff;
+    }
+
+    .v2ex-close {
+      color: #bbb;
+      background: #ffffff14;
+
+      &:hover {
+        color: #fff;
+        background: #ffffff26;
+      }
+    }
+  }
+
+  .v2ex-meta {
+    color: #9a9a9a;
+    border-bottom-color: #ffffff14;
+  }
+
+  .v2ex-content,
+  .v2ex-reply-body {
+    a {
+      color: #7fb0ff;
+    }
+
+    pre {
+      background: #ffffff0f;
+    }
+
+    blockquote {
+      color: #a8a8a8;
+      border-left-color: #ffffff26;
+    }
+  }
+
+  .v2ex-replies {
+    border-top-color: #ffffff14;
+  }
+
+  .v2ex-reply {
+    border-bottom-color: #ffffff0a;
+  }
+
+  .v2ex-reply-head {
+    .v2ex-reply-author {
+      color: #dcdcdc;
+    }
+
+    .v2ex-reply-floor {
+      color: #7fb0ff;
+    }
+
+    .v2ex-reply-time {
+      color: #8a8a8a;
+    }
+  }
+
+  .v2ex-body-foot {
+    color: #8a8a8a;
+
+    a {
+      color: #7fb0ff;
+    }
+  }
+
+  .v2ex-loading {
+    color: #9a9a9a;
+
+    &.is-error {
+      color: #ff8a8a;
+    }
+  }
+
+  .v2ex-b64-panel {
+    color: #e6e6e6;
+    background: #23232a;
+
+    .v2ex-b64-actions button {
+      color: #7fb0ff;
+      border-color: #7fb0ff40;
+      background: #7fb0ff1a;
     }
   }
 }

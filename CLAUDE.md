@@ -85,6 +85,7 @@ node publish.js
 - **点标题开弹窗，不跳转**：拦截列表页里 `/t/{id}` 的点击（新标签/修饰键点击放行；作者、节点链接不拦），`fetch('/t/{id}')` 拿 HTML 自己解析——**回复不在 `/api/topics/show.json` 里**（那个只有正文），所以只能解析页面：标题 `.header h1`、正文 `.topic_content`、楼层 `.cell[id^="r_"]`（作者 `.dark`、楼层 `.no`、时间 `.ago[title]`、内容 `.reply_content`）。**只渲染第一页回复**，底部给"在原页面查看全部"。
 - **imgur 图片代理**：`imgur.com` 的图有防盗链，先存 `data-origin-url`、加 `referrerpolicy=no-referrer`，再把 `src` 换到 `https://img.noobzone.ru/getimg.php?url=`（前缀拼原地址，别 encode）；**加载失败就把 `<img>` 换回一条原链接**，不留破图。非 imgur 的图只加 `no-referrer`。
 - **选中文字解 base64**：`mouseup` 时若选区能匹配 `[A-Za-z0-9+/=]{8,}`，在光标旁浮一个小条，**点了才解码**。解码必须 `atob → Uint8Array → Blob → .text()`，直接 `atob` 出来的中文是乱码。
+- **主题**：卡片和弹窗都是自绘的，所以必须自己跟页面走——页面黑底、我们的白卡片会很刺眼。右侧贴边一个浮动按钮循环 `自动 → 浅色 → 深色`（`v2ex-theme`，GM 持久化），把 `body[v2ex-theme=dark]` 打上、样式在 `html:has([v2ex-theme=dark])` 里给一套暗色。"自动"要**先量页面实际背景**（`backgroundIsDark()` 从 body 往上找第一个实色背景算亮度），量不出来再看 `prefers-color-scheme`——V2EX 自身没有暗色，用户看到的黑底多半来自浏览器扩展，只信系统偏好会判错。
 - **V2EX 开了 Trusted Types**（`innerHTML` 赋字符串直接抛异常）：所以内置样式的注入必须用 `textContent`（见 `vite.config.js` 的 `inlineCss`），`utils/index.js` 的 `addStyle` 同理。`v-html` 渲染弹窗内容在 V2EX 上是能用的（Vue 走的是 `el.innerHTML = value`，页面有 TT 策略时由浏览器裁决；真被拦就把策略加进 `trustedTypes.createPolicy`）。
 
 
