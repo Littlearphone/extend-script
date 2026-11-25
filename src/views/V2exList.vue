@@ -208,8 +208,12 @@ function onDocumentClick(event) {
   // 让浏览器自己处理"新标签打开"和按住修饰键的点击
   if (event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return
   if (!listPage) return
+  // 弹窗里的链接（"原页面""查看看全部"）和 base64 浮条不归这个拦截管：
+  // 它们本来就是 target=_blank，拦下来会变成"再开一次弹窗"，看着像打不开新窗口
+  if (event.target?.closest?.('.v2ex-modal, .v2ex-b64-panel')) return
   const anchor = event.target?.closest?.('a[href]')
   if (!anchor) return
+  if (anchor.target === '_blank' || anchor.hasAttribute('download')) return
   const id = topicIdOf(anchor.getAttribute('href'))
   if (!id) return
   // 头像/节点/作者这些链接不是帖子，别拦
