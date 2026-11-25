@@ -77,6 +77,17 @@ node publish.js
   - 一个已知边界：oho 找配偶时只扫**前 10 个**"以该词干开头"的候选，而词干是**砍掉末尾数字/下划线**得到的。所以集名只差末尾数字（`第1集`/`第2集`/…）时，第 10 集往后可能配不上对；名字里带字母/汉字结尾（`第1集 开场`、`太 君 买 瓜`）就没事。真遇到那种命名，在前缀列给它们各加一个字，或分批下到不同目录。
 - **进度、收起与列表缓存**：状态与**列表**都放在 `bilibili-download-state.js` 的模块级 reactive（不是组件私有 ref）。列表放模块级是因为"关掉弹窗＝卸载组件"——不复用的话用户改过的前缀、勾选、上一轮进度全丢。现在只有**页面换了**（`pageKey` = pathname+search，bilibili 是 SPA）或点工具栏「刷新列表」才重读，且**下载中拒绝重读**（会把在跑的行换掉）。对用户来说「关闭」和「收起」是同一件事（把窗口弄走、别打断下载）：头部的 `×` / Esc / 点外面**一律只是收起**，要彻底结束会话才用空闲时那个「关掉」（下载中不显示，因为卸载组件＝循环没人管了）。状态列在下载中显示 `视频+音频 47.0% · 3.4 MB/s · 5 连接`：百分比按两条轨的**合计字节**算，速度是 300ms 采样 + 指数平滑（分片并发下瞬时值抖得厉害）；字节数不占行内宽度，挪到悬停提示里（`statusDetail`）。**点完「下载」会自动收成右下角小条**（`collapseDownloadDialog()`）：用户接下来大概是去看视频，弹窗挡着没道理；小条上带 `下载中 1/3 · 45% · 3.4 MB/s`（`miniText`）和**「停止」**（弹窗已经收了，不能让用户为了停止再点开）。**停止必须在读流循环里生效**：`shouldStop` 从 `saveTrack` 一路传到 `writeStreamToFile` / `saveStreamAsDownload`，在里面逐块检查并抛 `AbortError`——只在"两个视频之间"检查的话，按下去要等当前这一集（几分钟）下完才有反应，会被当成没反应。中止后这一行退回"待下载"（不是 error），**把窗口重新展开**（`expandDownloadDialog()`：不展开的话它还停在上一步自动收起的状态，看起来像"下载按钮都没了"），并且**删掉已经写了一半的 `.part`**（`directory.removeEntry(tempName)`），不留给 oho 当垃圾。检查点要避开"用户停止"路径上的自动重试：`AbortError` 既不触发分片→整段的回退，也不触发换镜像重试。**总量没凑齐时进度条不画任何填充**——以前用的是一个 40% 宽、`margin-left` 在 0↔60% 摆动的"未知"滑块，它的右边缘会从 40% 扫到 100% 再扫回来，看起来就是"先涨到 100% 又退回 0"，被当成假进度投诉过；现在宁可空着（状态行有字节数和速度），`tracksKnown` 为真才显示真实宽度。**百分比必须等"每条轨都报出自己的总量"之后才算**（`expectedTracks` / `tracksKnown`）：只报了一部分轨时，分母里缺了还没报到的那条，音频自己下到 100% 就会被画成"整行 100%"，等视频轨报数再掉回去——这就是用户反复看到的"先有一段蓝条、开始有速度以后又退回"。视频轨比音频轨晚报到是常态（它要多走 `getFileHandle` → `createWritable` → 分片探针 → 等首块）。总量未知期间状态行显示**字节数**而不是百分比，进度条保持 0。playurl 里的 `size` 如果给了就顺手预置一下（`trackProgress.set`），能提早进入百分比状态；**但不能指望它**——实测常常是 0/缺失，所以真判据是"各轨自己报回的总量"。
 
+### V2EX 列表与弹窗（`V2exList.vue`）
+
+`v2ex.com` 的列表页（`/`、`/?tab=`、`/go/*`、`/recent`）走这个视图，做三件事：
+
+- **卡片化 = 纯 CSS**，不改 V2EX 的 DOM：给 `#Main .cell.item` 加圆角/阴影/hover 位移，把内层 `table` 的边框背景清掉，`.count_livid` 做成回复数徽标。这样分页、排序、Tab 全都还是原生的（V2Next 那套是接管整个列表重渲染，代价大得多，没必要）。视图挂载时给 `body` 打 `v2ex-view=list|topic`，样式用 `html:has([v2ex-view=list])` 限定。
+- **点标题开弹窗，不跳转**：拦截列表页里 `/t/{id}` 的点击（新标签/修饰键点击放行；作者、节点链接不拦），`fetch('/t/{id}')` 拿 HTML 自己解析——**回复不在 `/api/topics/show.json` 里**（那个只有正文），所以只能解析页面：标题 `.header h1`、正文 `.topic_content`、楼层 `.cell[id^="r_"]`（作者 `.dark`、楼层 `.no`、时间 `.ago[title]`、内容 `.reply_content`）。**只渲染第一页回复**，底部给"在原页面查看全部"。
+- **imgur 图片代理**：`imgur.com` 的图有防盗链，先存 `data-origin-url`、加 `referrerpolicy=no-referrer`，再把 `src` 换到 `https://img.noobzone.ru/getimg.php?url=`（前缀拼原地址，别 encode）；**加载失败就把 `<img>` 换回一条原链接**，不留破图。非 imgur 的图只加 `no-referrer`。
+- **选中文字解 base64**：`mouseup` 时若选区能匹配 `[A-Za-z0-9+/=]{8,}`，在光标旁浮一个小条，**点了才解码**。解码必须 `atob → Uint8Array → Blob → .text()`，直接 `atob` 出来的中文是乱码。
+- **V2EX 开了 Trusted Types**（`innerHTML` 赋字符串直接抛异常）：所以内置样式的注入必须用 `textContent`（见 `vite.config.js` 的 `inlineCss`），`utils/index.js` 的 `addStyle` 同理。`v-html` 渲染弹窗内容在 V2EX 上是能用的（Vue 走的是 `el.innerHTML = value`，页面有 TT 策略时由浏览器裁决；真被拦就把策略加进 `trustedTypes.createPolicy`）。
+
+
 ### 构建机制 (vite.config.js)
 
 - Vite `lib` 模式，格式 UMD，入口 `src/main.js`。

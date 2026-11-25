@@ -14,7 +14,7 @@ export function addStyle(id, style) {
     element.id = id
     return element
   })()
-  styleElement.innerHTML = style
+  styleElement.textContent = style
   // const sheet = styleElement.sheet
   // sheet.insertRule(style, (sheet.rules || sheet.cssRules || []).length)
 }

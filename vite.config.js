@@ -53,6 +53,7 @@ const description = (version) => `// ==UserScript==
 // @include      /https?://www.douyu.com/([0-9]+|topic/.*[?]rid=[0-9]+)/
 // @include      /https?://cloud.tencent.com.cn/developer/(information|article)/.*/
 // @include      /https?://developer.baidu.com/article/detail([.]html[?]id=.*|s/.*)/
+// @include      /https?://([a-z]+[.])?v2ex[.]com/.*/
 // @grant        GM.setValue
 // @grant        GM_setValue
 // @grant        GM.getValue
@@ -68,17 +69,24 @@ const description = (version) => `// ==UserScript==
 `
 const inlineCss = rawCss => `(function () {
   function insertCommonStyle() {
-    const id = 'nihility.common.style'
-    if (document.getElementById(id)) {
-      return setTimeout(insertCommonStyle, 100)
-    }
-    const styleElement = (function () {
+    try {
+      if (document.getElementById('nihility.common.style')) {
+        return setTimeout(insertCommonStyle, 100)
+      }
+      // document.head 在 document-start 阶段可能还不存在
+      const head = document.head || document.documentElement
+      if (!head) {
+        return setTimeout(insertCommonStyle, 50)
+      }
       const element = document.createElement('style')
-      document.head.appendChild(element)
-      element.id = id
-      return element
-    })()
-    styleElement.innerHTML = ${JSON.stringify(rawCss)}
+      element.id = 'nihility.common.style'
+      // 必须用 textContent：有些站（如 V2EX）开了 Trusted Types，
+      // 给 innerHTML 赋字符串会直接抛异常，样式就全丢了
+      element.textContent = ${JSON.stringify(rawCss)}
+      head.appendChild(element)
+    } catch (error) {
+      // 页面还没就绪，下一轮再试
+    }
     return setTimeout(insertCommonStyle, 100)
   }
   return setTimeout(insertCommonStyle, 100)

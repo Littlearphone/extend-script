@@ -9,6 +9,7 @@ import BaiduArticle from '../views/BaiduArticle.vue'
 import GoogleSearch from '../views/GoogleSearch.vue'
 import ZhihuArticle from '../views/ZhihuArticle.vue'
 import BilibiliVideo from '../views/BilibiliVideo.vue'
+import V2exList from '../views/V2exList.vue'
 
 if (location.hostname === 'localhost') {
   document.body.setAttribute('www-baidu-com', '')
@@ -28,6 +29,7 @@ export const MAPPINGS = {
   'https?://baijiahao.baidu.com/s[?].*': BaiduArticle,
   'https?://www.google.com/search[?].*': GoogleSearch,
   'https?://(www|live).bilibili.com/.*': BilibiliVideo,
+  'https?://([a-z]+[.])?v2ex[.]com/.*': V2exList,
   'https?://(cn|www).bing.com/search[?].*': BingSearch,
   'https?://www.51cto.com/article/.+.html': SnippetHack,
   'https?://stackoverflow.com/questions/.*': SnippetHack,
