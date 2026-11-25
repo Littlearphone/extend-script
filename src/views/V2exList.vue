@@ -290,37 +290,129 @@ function closeTopic() {
   requestId++
 }
 
-// ---- 图片：imgur 走代理，其他图去掉 referer；代理挂了就退回一条链接 ----
-function processImages(root) {
-  if (!root) return
-  // V2EX 里有人把图片地址当纯文本贴（<a> 文字就是 URL），转成 <img>
+// ---- 图片：先把"图片地址"变成 <img>，再让 imgur 走代理 ----
+
+// 能认出来的图片地址：直链（带扩展名）+ imgur 短链（imgur.com/xxxxx 没有扩展名，
+// 要拼成 i.imgur.com/xxxxx.png；相册/画廊那种是网页不是图，别碰）
+const IMAGE_URL = /https?:\/\/(?:(?:i\.)?imgur\.com\/(?!a\/|gallery\/|t\/|album\/)[A-Za-z0-9]{5,}(?:\.(?:png|jpe?g|gif|webp))?|[^\s<>"']+?\.(?:png|jpe?g|gif|webp))(?:\?[^\s<>"']*)?/gi
+
+function directImageUrl(url) {
+  const imgur = url.match(/^https?:\/\/(?:i\.)?imgur\.com\/([A-Za-z0-9]{5,})(?:\.(png|jpe?g|gif|webp))?/i)
+  if (imgur) {
+    // 短链没扩展名，imgur 的直链是 i.imgur.com/<id>.png（有扩展名就照原样）
+    return `https://i.imgur.com/${imgur[1]}.${(imgur[2] || 'png').toLowerCase()}`
+  }
+  return url
+}
+
+function createImageLink(url) {
+  const anchor = document.createElement('a')
+  anchor.className = 'v2ex-image-link'
+  anchor.href = directImageUrl(url)
+  anchor.target = '_blank'
+  anchor.rel = 'noreferrer'
+  anchor.title = url
+  const image = document.createElement('img')
+  // 真正的 src 由 applyImgurProxy 统一设置（它要先补直链、再排"代理→链接"的退路）
+  image.dataset.imageUrl = url
+  // alt 不写地址：图挂了会变成一串 URL 糊在正文里，很难看（下面有 error 兜底）
+  image.alt = ''
+  image.setAttribute('loading', 'lazy')
+  anchor.appendChild(image)
+  return anchor
+}
+
+// 正文里的图片地址是**纯文本**（V2EX 不会自动变成链接），所以得走一遍文本节点
+function textNodesWithUrl(root) {
+  const nodes = []
+  const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, {
+    acceptNode(node) {
+      const parent = node.parentElement
+      if (!parent) return NodeFilter.FILTER_REJECT
+      // <a> 里的单独处理；代码块里的链接是代码，不该变成图
+      if (parent.closest('a, pre, code, script, style, svg, iframe, textarea')) return NodeFilter.FILTER_REJECT
+      return /https?:\/\//i.test(node.nodeValue) ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_REJECT
+    },
+  })
+  while (walker.nextNode()) nodes.push(walker.currentNode)
+  return nodes
+}
+
+function convertImageLinks(root) {
+  // 1) <a> 的文字就是地址本身（V2EX 编辑器会这么贴）
   root.querySelectorAll('a[href]').forEach(anchor => {
     if (anchor.children.length) return
     const href = anchor.getAttribute('href') || ''
-    if (!/^https?:\/\/.+\.(png|jpe?g|gif|webp)(\?.*)?$/i.test(href)) return
-    if (anchor.textContent.trim() !== href) return
-    const image = document.createElement('img')
-    image.src = href
-    anchor.replaceWith(image)
+    const text = anchor.textContent.trim()
+    if (text !== href) return
+    IMAGE_URL.lastIndex = 0
+    if (!IMAGE_URL.test(href)) return
+    IMAGE_URL.lastIndex = 0
+    anchor.replaceWith(createImageLink(href))
   })
 
+  // 2) 纯文本里的地址
+  textNodesWithUrl(root).forEach(node => {
+    const text = node.nodeValue
+    IMAGE_URL.lastIndex = 0
+    const matches = [...text.matchAll(IMAGE_URL)]
+    if (!matches.length) return
+    const fragment = document.createDocumentFragment()
+    let cursor = 0
+    matches.forEach(match => {
+      if (match.index > cursor) {
+        fragment.appendChild(document.createTextNode(text.slice(cursor, match.index)))
+      }
+      fragment.appendChild(createImageLink(match[0]))
+      cursor = match.index + match[0].length
+    })
+    if (cursor < text.length) {
+      fragment.appendChild(document.createTextNode(text.slice(cursor)))
+    }
+    node.replaceWith(fragment)
+  })
+}
+
+// V2EX 把 markdown 图片渲染成 <img src="https://imgur.com/xxxx">：**src 是网页不是图**
+// （i.imgur.com/xxxx 才返回 HTML，补上 .png 才是图）。所以先把 src 归一成直链再加载；
+// 直链被挡才借代理，代理也不行才退回一条链接。
+function applyImgurProxy(root) {
   root.querySelectorAll('img').forEach(image => {
     image.setAttribute('loading', 'lazy')
     image.setAttribute('referrerpolicy', 'no-referrer')
-    const src = image.getAttribute('src') || ''
-    if (!/imgur\.com/i.test(src)) return
-    image.dataset.originUrl = src
-    image.src = IMGUR_PROXY + src
+    const raw = image.dataset.imageUrl || image.getAttribute('src') || ''
+    if (!raw) return
+    const isImgur = /imgur\.com/i.test(raw)
+    const direct = directImageUrl(raw)
+    image.dataset.originUrl = direct
+
     image.addEventListener('error', () => {
+      if (isImgur && !image.dataset.proxied) {
+        image.dataset.proxied = '1'
+        image.src = IMGUR_PROXY + direct
+        return
+      }
       const link = document.createElement('a')
       link.href = image.dataset.originUrl
       link.textContent = image.dataset.originUrl
       link.target = '_blank'
       link.rel = 'noreferrer'
       link.className = 'v2ex-broken-image'
-      image.replaceWith(link)
-    }, { once: true })
+      // 图外面套了 <a>（点开看原图）时要换掉外层那个，别把 <a> 塞进 <a> 里
+      const wrapper = image.closest('.v2ex-image-link')
+      if (wrapper) wrapper.replaceWith(link)
+      else image.replaceWith(link)
+    })
+
+    // 先挂监听再设 src：V2EX 原本那个 img 可能已经在加载 HTML 了
+    image.src = direct
   })
+}
+
+function processImages(root) {
+  if (!root) return
+  convertImageLinks(root)
+  applyImgurProxy(root)
 }
 
 // ---- 选中 base64 → 点一下解码 ----
@@ -613,6 +705,13 @@ html:has([v2ex-view=list]) {
     height: auto;
     margin: 8px 0;
     border-radius: 6px;
+  }
+
+  // 图片地址转出来的图外面包了一层链接（点开看原图）
+  .v2ex-image-link {
+    display: inline-block;
+    max-width: 100%;
+    line-height: 0;
   }
 
   a {
