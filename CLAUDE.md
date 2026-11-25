@@ -93,10 +93,12 @@ node publish.js
 
 只保留**正文 + 评论区**，其余（顶部工具栏、左右侧栏、两侧广告位 `simple-ad-slot`、推荐流、作者信息条、上一篇/下一篇、底部）全部隐藏。右侧一个圆形图标按钮切换，状态记在 `csdn-reading-mode`（默认开）。
 
-- **阅读模式自己铺"白纸"**（`background: #fff` + 去掉 `has-simple-ad-background-skin` / `is-vip-skin` 类）：CSDN 会给部分文章挂"广告皮肤"，整页刷成深色星空底，但正文颜色还是深色 → **黑底黑字**。不要指望"继承站点前景色"，皮肤一换就翻车；白纸模式最稳。相应地，代码块背景用 `rgba(127,127,127,.12)`、blockquote 用 `color: inherit` + 半透明边框，别再写死浅色。
+- **阅读模式自己铺"白纸"**（`background: #fff !important`）：CSDN 会给部分文章挂"广告皮肤"，整页刷成深色星空底，但正文颜色还是深色 → **黑底黑字**。但**只用 CSS 在 `.csdn-reading` 下压，绝不要去摘 body 上的 `has-simple-ad-background-skin` / `is-vip-skin` 类**——摘了就永久拆坏皮肤，退出阅读模式后背景图再也回不来（踩过）。相应地，代码块背景用 `rgba(127,127,127,.12)`、blockquote 用 `color: inherit` + 半透明边框，别再写死浅色。
+- **居中**要两处一起改：`#csdn-main-father-root` 有 `padding-left: 72px`（给两侧广告位预留的，广告位藏了它还在，整块正文就偏右）；`#mainBox` 站点写的是 `max-width: 1472px !important`，我们的 `max-width: 860px` **必须也带 `!important`** 才压得住。实测两页居中偏差都归 0。
+- **标题与署名要有层次**：页头那个 `h1.title-article`（32px）保留，正文里同名的那个标题（通常 `h2`，22px）藏掉——以前反过来藏页头，结果标题掉到 22px、跟正文 16px 差别不明显，被当成"标题和正文一样大"。"作者：xxx" 这类署名行是普通 `<p>`，打上 `.csdn-author-line` 降成 13.5px 灰字；这条规则**必须挂在 `#content_views` 下面**（或加 `!important`），否则特异性输给站点的 `#content_views p`。
 - **去折叠**：遮罩（`.hide-article-box`）和"登录后阅读全文"按钮直接删——内容本来就在 DOM 里；`#article_content` / `#content_views` 的 `max-height` / `height` / `overflow` 清掉；`pre.set-code-hide` 的折叠还原并删掉 `.hide-preCode-box`。**只有在真的存在折叠标记（遮罩/展开按钮/行内 max-height）时才清高度**，否则会把站点自己设的布局一起破坏。页面是异步往里塞这些的，所以挂 `MutationObserver`（`style`/`class`/`childList`）反复补。
 - **折叠评论**：`#lookFlodComment .look-more-flodcomment` 点一下展开，`#btnMoreComment` 点一下加载更多。标记**记在元素上**（`dataset`）而不是一次性布尔值——评论区异步渲染，第一个跑的时候那个链接可能是空壳或者会被替换掉，用布尔值就永久跳过了新出现的那个（踩过）。评论区内部的按钮不要藏，藏着就没法继续加载。
-- **标题重复**：CSDN 常见"页头标题 + 正文开头的 h1"是同一句，`dedupeTitle()` 比一下文本，重复就把页头那份藏掉。
+- **标题重复**：CSDN 常见"页头标题 + 正文开头的 h2"是同一句，`dedupeTitle()` 比一下文本，重复就把**正文里**那份藏掉（`.csdn-heading-duplicate`），页头 `h1` 留着。
 - **解除复制限制**在 `src/utils/copy-guard.js`，由 `main.js` 在 **document-start** 调用（`csdn.net` 才装）。晚于页面脚本就没用了：`stopImmediatePropagation` 只对"之后注册"的监听器有效。两手都做：捕获阶段拦 `copy/cut/paste/selectstart/contextmenu/dragstart/beforecopy`，以及把 `document/window/body` 的 `on*` 处理器属性定义成"getter 永远 null、setter 空"，页面写不进去；`<body oncopy>` 这种行内属性也清掉。**只 `stopImmediatePropagation`，绝不 `preventDefault`**——原生复制/选中/右键要照常发生。CSS 侧用 `body[blog-csdn-net] #content_views *` 这种带属性选择器的 `!important` 规则压 `user-select: none`（多一个属性选择器，特异性就高于页面后插入的 `#content_views *`）。**输入框里的 `paste` / `Ctrl+C/V` 不拦**（富文本评论框要靠这些事件）。
 
 ### 测试 CSDN 的注意点

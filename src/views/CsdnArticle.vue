@@ -98,8 +98,11 @@ function unseal() {
     logger.debug('CSDN：已点开更多评论')
   })
 
-  // 6) 页头标题和正文开头那个标题是同一句时，藏掉页头那份（不然同样的字出现两遍）
+  // 6) 页头标题和正文里那个标题是同一句时（CSDN 的 markdown 文章基本都会自带一遍），
+  //    留页头那份（它是 h1、样式更正式），把正文里重复的那个藏掉
   dedupeTitle()
+  // 7) 正文开头那行"作者：xxx"是普通段落，和正文同字号显得没层次，标一下降级成说明文字
+  markAuthorLine()
 }
 
 function normalizeTitle(text) {
@@ -112,9 +115,22 @@ function dedupeTitle() {
   if (!header || !views) return
   const headerTitle = normalizeTitle(header.innerText)
   if (!headerTitle) return
-  const firstHeading = views.querySelector('h1, h2, h3')
-  const duplicated = normalizeTitle(firstHeading?.innerText) === headerTitle
-  header.classList.toggle('csdn-title-duplicate', duplicated)
+  views.querySelectorAll('h1, h2, h3').forEach(heading => {
+    const duplicated = normalizeTitle(heading.innerText) === headerTitle
+    heading.classList.toggle('csdn-heading-duplicate', duplicated)
+  })
+}
+
+const AUTHOR_LINE = /^(作者|原文|本文作者|作者简介|来源|译者|编辑)\s*[:：]/
+
+function markAuthorLine() {
+  const views = document.querySelector('#content_views')
+  if (!views) return
+  const firstParagraphs = [...views.querySelectorAll('p')].slice(0, 3)
+  firstParagraphs.forEach(paragraph => {
+    const matched = AUTHOR_LINE.test(paragraph.textContent.trim())
+    paragraph.classList.toggle('csdn-author-line', matched)
+  })
 }
 
 function scheduleUnseal() {
@@ -131,10 +147,8 @@ function scheduleUnseal() {
 
 function applyReading() {
   document.body.classList.toggle('csdn-reading', reading.value)
-  if (!reading.value) return
-  // CSDN 会给部分文章的 body 挂"广告皮肤"类，把整页刷成深色星空底（字还是深色，
-  // 黑底黑字）。阅读模式自己铺白纸，所以把这些皮肤类摘掉。
-  document.body.classList.remove('has-simple-ad-background-skin', 'is-vip-skin', 'has-skin')
+  // 不要摘站点自己的 class（has-simple-ad-background-skin 之类）：那会把页面皮肤永久
+  // 拆坏，退出阅读模式后背景图/配色就回不来了。皮肤只在阅读模式里用 CSS 压掉。
 }
 
 function toggleReading() {
@@ -217,11 +231,18 @@ body[blog-csdn-net] {
 
 // ---------------- 干净阅读模式 ----------------
 body[blog-csdn-net].csdn-reading {
-  // 自己铺"白纸"：不依赖站点皮肤，避免深色广告皮肤下的黑底黑字
+  // 自己铺"白纸"：不依赖站点皮肤，避免深色广告皮肤下的黑底黑字。
+  // 用 CSS 压而不是摘 class——摘了 class 退出阅读模式后皮肤就回不来了。
   &,
   #csdn-main-father-root {
     background: #fff !important;
     background-image: none !important;
+  }
+
+  // 广告位被藏了，但它给父级预留的 72px 左内边距还留着，整块正文就会偏右
+  #csdn-main-father-root {
+    padding-left: 0 !important;
+    padding-right: 0 !important;
   }
 
   // 只留"正文 + 评论"，其余全部收起
@@ -260,10 +281,11 @@ body[blog-csdn-net].csdn-reading {
     display: none !important;
   }
 
+  // 站点给 #mainBox 写的是 max-width:1472px !important，不加 !important 压不住
   #mainBox.container {
-    max-width: 860px;
-    margin: 0 auto;
-    padding: 0 16px;
+    max-width: 860px !important;
+    margin: 0 auto !important;
+    padding: 0 16px !important;
   }
 
   main {
@@ -283,10 +305,15 @@ body[blog-csdn-net].csdn-reading {
 
   .article-title-box .title-article,
   #article_content h1 {
-    font-size: 26px;
+    font-size: 28px;
     font-weight: 700;
-    line-height: 1.45;
-    margin: 28px 0 20px;
+    line-height: 1.4;
+    margin: 0 0 14px;
+  }
+
+  // 正文里那个和页头重复的标题（通常是 h2）藏掉，标题只留页头那份
+  .csdn-heading-duplicate {
+    display: none !important;
   }
 
   #article_content {
@@ -301,6 +328,15 @@ body[blog-csdn-net].csdn-reading {
 
     p {
       margin: 0 0 16px;
+    }
+
+    // "作者：xxx" 这类署名行：降一级，当说明文字。
+    // 必须挂在 #content_views 下面，否则特异性输给站点的 `#content_views p`
+    p.csdn-author-line {
+      margin: 0 0 24px;
+      font-size: 13.5px !important;
+      line-height: 1.6;
+      color: #8b8b8b !important;
     }
 
     h1, h2, h3, h4, h5 {
@@ -366,12 +402,6 @@ body[blog-csdn-net].csdn-reading {
     .comment-list-box {
       padding: 0;
     }
-  }
-
-  // 正文第一段标题和页头标题是同一句时（CSDN 常见），页头那份由 JS 打标记藏掉，
-  // 否则屏幕上同样的字出现两遍
-  .article-title-box.csdn-title-duplicate {
-    display: none !important;
   }
 }
 
