@@ -404,8 +404,9 @@ function applyImgurProxy(root) {
       else image.replaceWith(link)
     })
 
-    // 先挂监听再设 src：V2EX 原本那个 img 可能已经在加载 HTML 了
-    image.src = direct
+    // 先挂监听再设 src：V2EX 原本那个 img 可能已经在加载 HTML 了。
+    // 只有"归一之后跟原来不一样"才重新赋值——否则整页头像都会重新加载、闪一下
+    if (direct !== image.getAttribute('src')) image.src = direct
   })
 }
 
@@ -475,6 +476,9 @@ onMounted(() => {
   // 跟着站点当前的设置走（V2EX 自己也有主题选项，别各记各的）
   themeMode.value = readStoredTheme()
   applyTheme()
+  // 帖子页面本身也要处理图片：直接在原页面看帖时不走弹窗，否则
+  // <img src="https://imgur.com/ID"> 会一直是网页地址（图能不能出来全看 imgur 猜得对不对）
+  if (!listPage) processImages(document.querySelector('#Main') || document.body)
   // 系统主题变了只影响"自动"模式
   darkMedia = window.matchMedia?.('(prefers-color-scheme: dark)')
   darkMedia?.addEventListener?.('change', () => {
