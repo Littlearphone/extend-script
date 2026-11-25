@@ -3,18 +3,22 @@
        图标用内联 SVG 而不是 ☀/☾ 这类字形——那些字形的"墨迹"不在 em 框中心，
        不管怎么 line-height/flex 都看着偏；SVG 的几何中心就是盒子中心。 -->
   <button class="v2ex-theme" :class="{ 'is-dark': isDark }" :title="themeTitle" :aria-label="themeTitle" @click="cycleTheme">
+    <!-- 图标只反映**模式**（自动/浅色/深色），不反映"解析出来是明还是暗"：
+         否则"自动 + 系统深色"会显示成月牙，和深色状态一模一样，看起来像重复了。 -->
     <svg v-if="themeMode === 'light'" class="v2ex-theme-icon" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
       <circle cx="12" cy="12" r="4.2" fill="currentColor"/>
       <g stroke="currentColor" stroke-width="2" stroke-linecap="round">
         <path d="M12 2.2v2.2M12 19.6v2.2M2.2 12h2.2M19.6 12h2.2M5.1 5.1l1.6 1.6M17.3 17.3l1.6 1.6M18.9 5.1l-1.6 1.6M6.7 17.3l-1.6 1.6"/>
       </g>
     </svg>
-    <svg v-else-if="isDark" class="v2ex-theme-icon" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
+    <svg v-else-if="themeMode === 'dark'" class="v2ex-theme-icon" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
       <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z" fill="currentColor"/>
     </svg>
     <svg v-else class="v2ex-theme-icon" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
-      <circle cx="12" cy="12" r="8.6" fill="none" stroke="currentColor" stroke-width="2"/>
-      <path d="M12 3.4a8.6 8.6 0 0 1 0 17.2Z" fill="currentColor"/>
+      <!-- 自动＝左半描边 + 右半实心。左半的半径要**扣掉描边的一半**（7.5 + 1 = 8.5），
+           否则描边外沿比实心半径多出 1px，两半对不齐，看着像画了两个圈。 -->
+      <path d="M12 4.5a7.5 7.5 0 0 0 0 15" fill="none" stroke="currentColor" stroke-width="2"/>
+      <path d="M12 3.5a8.5 8.5 0 0 1 0 17Z" fill="currentColor"/>
     </svg>
   </button>
 
@@ -111,7 +115,11 @@ const isDark = ref(false)
 let darkMedia = null
 
 const themeLabel = computed(() => (themeMode.value === 'auto' ? '自动' : (themeMode.value === 'dark' ? '深色' : '浅色')))
-const themeTitle = computed(() => `整站主题：${themeLabel.value}（点击切换 自动 / 浅色 / 深色）`)
+// 只写"当前是什么、点了会变成什么"，避免标题里把同一个词重复两遍
+const themeTitle = computed(() => {
+  const next = themeMode.value === 'auto' ? '浅色' : themeMode.value === 'light' ? '深色' : '自动'
+  return `整站主题：${themeLabel.value}，点击切到${next}`
+})
 
 function pageWindow() {
   return typeof unsafeWindow === 'undefined' ? window : unsafeWindow
