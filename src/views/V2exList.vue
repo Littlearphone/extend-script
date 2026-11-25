@@ -27,26 +27,34 @@
   <div class="v2ex-mask" v-if="topicOpen" @pointerdown.self="closeTopic" @click.self="closeTopic">
     <div class="v2ex-modal">
       <header class="v2ex-head">
-        <div class="v2ex-title">{{ topic.title || '加载中…' }}</div>
+        <img v-if="topic.avatar" class="v2ex-topic-avatar" :src="topic.avatar" :alt="topic.author" referrerpolicy="no-referrer">
+        <div class="v2ex-head-main">
+          <div class="v2ex-title">{{ topic.title || '加载中…' }}</div>
+          <div class="v2ex-meta" v-if="topic.meta">{{ topic.meta }}</div>
+        </div>
         <div class="v2ex-head-right">
           <a v-if="topic.url" class="v2ex-plain-link" :href="topic.url" target="_blank" rel="noreferrer">原页面</a>
           <button class="v2ex-close" title="关闭（Esc）" @click="closeTopic">×</button>
         </div>
       </header>
-      <div class="v2ex-meta" v-if="topic.meta">{{ topic.meta }}</div>
       <div class="v2ex-body" ref="bodyRef">
         <div class="v2ex-loading" v-if="loading">读取中…</div>
         <div class="v2ex-loading is-error" v-else-if="error">{{ error }}</div>
         <template v-else>
           <div class="v2ex-content" v-html="topic.content"></div>
           <div class="v2ex-replies" v-if="topic.replies.length">
-            <div class="v2ex-reply" v-for="reply in topic.replies" :key="reply.id">
-              <div class="v2ex-reply-head">
-                <a class="v2ex-reply-author" :href="reply.memberUrl">{{ reply.author }}</a>
-                <span class="v2ex-reply-floor">{{ reply.floor }}</span>
-                <span class="v2ex-reply-time">{{ reply.time }}</span>
+            <div class="v2ex-reply" :class="{ 'is-op': reply.isOp }" v-for="reply in topic.replies" :key="reply.id">
+              <img v-if="reply.avatar" class="v2ex-reply-avatar" :src="reply.avatar" :alt="reply.author"
+                   loading="lazy" referrerpolicy="no-referrer">
+              <div class="v2ex-reply-main">
+                <div class="v2ex-reply-head">
+                  <a class="v2ex-reply-author" :href="reply.memberUrl">{{ reply.author }}</a>
+                  <span class="v2ex-op" v-if="reply.isOp">楼主</span>
+                  <span class="v2ex-reply-floor">{{ reply.floor }}</span>
+                  <span class="v2ex-reply-time">{{ reply.time }}</span>
+                </div>
+                <div class="v2ex-reply-body" v-html="reply.content"></div>
               </div>
-              <div class="v2ex-reply-body" v-html="reply.content"></div>
             </div>
           </div>
           <div class="v2ex-body-foot">
@@ -95,6 +103,8 @@ let requestId = 0
 const topic = reactive({
   id: '',
   title: '',
+  author: '',
+  avatar: '',
   meta: '',
   content: '',
   url: '',
@@ -215,6 +225,8 @@ async function openTopic(id) {
   error.value = ''
   topic.id = id
   topic.title = ''
+  topic.author = ''
+  topic.avatar = ''
   topic.meta = ''
   topic.content = ''
   topic.replies = []
@@ -240,6 +252,9 @@ function fillTopic(doc) {
   const main = doc.querySelector('#Main') || doc.body
   topic.title = main.querySelector('.header h1')?.textContent.trim() || doc.title.replace(/ - V2EX$/, '')
   // 作者 · 时间 · 浏览数，原样搬过来（它是"作者 · 时间 · N views"）
+  const authorLink = main.querySelector('.header small.gray a, .header .gray a')
+  topic.author = authorLink?.textContent.trim() || ''
+  topic.avatar = main.querySelector('.header img.avatar')?.getAttribute('src') || ''
   topic.meta = main.querySelector('.header small.gray, .header .gray')?.textContent.replace(/\s+/g, ' ').trim() || ''
   topic.content = main.querySelector('.topic_content')?.innerHTML || '<p class="v2ex-empty">（这条没有正文）</p>'
 
@@ -247,11 +262,15 @@ function fillTopic(doc) {
   main.querySelectorAll('.cell[id^="r_"]').forEach(cell => {
     const content = cell.querySelector('.reply_content')
     if (!content) return
-    const authorLink = cell.querySelector('.dark')
+    const replyAuthor = cell.querySelector('.dark')
+    const author = replyAuthor?.textContent.trim() || '匿名'
     replies.push({
       id: cell.id,
-      author: authorLink?.textContent.trim() || '匿名',
-      memberUrl: authorLink?.getAttribute('href') || '#',
+      author,
+      // 楼主在回复里也出现时给个标记，否则一整列头像分不清谁是发帖人
+      isOp: !!topic.author && author === topic.author,
+      avatar: cell.querySelector('img.avatar')?.getAttribute('src') || '',
+      memberUrl: replyAuthor?.getAttribute('href') || '#',
       floor: cell.querySelector('.no')?.textContent.trim().replace(/^#?/, '#') || '',
       time: cell.querySelector('.ago')?.getAttribute('title') || cell.querySelector('.ago')?.textContent.trim() || '',
       content: content.innerHTML,
@@ -497,6 +516,21 @@ html:has([v2ex-view=list]) {
   justify-content: space-between;
   border-bottom: 1px solid var(--box-border-color, #0000000f);
 
+  // 楼主的头像放在标题左边：没有头像时一整列回复看起来像没加载完
+  .v2ex-topic-avatar {
+    flex: none;
+    width: 40px;
+    height: 40px;
+    object-fit: cover;
+    border-radius: 6px;
+    background: var(--box-background-alt-color, #f3f3f3);
+  }
+
+  .v2ex-head-main {
+    flex: 1;
+    min-width: 0;
+  }
+
   .v2ex-title {
     font-size: 17px;
     font-weight: 700;
@@ -541,12 +575,11 @@ html:has([v2ex-view=list]) {
   }
 }
 
+// 现在 meta 在 head 里面（头像 + 标题 + 作者信息），不再单独占一条
 .v2ex-meta {
-  flex: none;
-  padding: 8px 16px;
+  margin-top: 4px;
   font-size: 12px;
   color: var(--color-gray, #8d8d8d);
-  border-bottom: 1px solid var(--box-border-color, #0000000f);
 }
 
 .v2ex-body {
@@ -609,18 +642,35 @@ html:has([v2ex-view=list]) {
 }
 
 .v2ex-reply {
+  display: flex;
+  gap: 10px;
   padding: 12px 0;
+  align-items: flex-start;
   border-bottom: 1px solid var(--box-border-color, #00000008);
 
   &:last-child {
     border-bottom: 0;
+  }
+
+  .v2ex-reply-avatar {
+    flex: none;
+    width: 32px;
+    height: 32px;
+    object-fit: cover;
+    border-radius: 6px;
+    background: var(--box-background-alt-color, #f3f3f3);
+  }
+
+  .v2ex-reply-main {
+    flex: 1;
+    min-width: 0;
   }
 }
 
 .v2ex-reply-head {
   display: flex;
   gap: 8px;
-  align-items: baseline;
+  align-items: center;
   margin-bottom: 4px;
   font-size: 12.5px;
 
@@ -632,6 +682,16 @@ html:has([v2ex-view=list]) {
     &:hover {
       text-decoration: underline;
     }
+  }
+
+  // 楼主标记：光靠头像认人不行（缩略图很小），给个明确的徽标
+  .v2ex-op {
+    padding: 0 5px;
+    font-size: 11px;
+    line-height: 16px;
+    color: #fff;
+    border-radius: 4px;
+    background: var(--link-color, #4f86d6);
   }
 
   .v2ex-reply-floor {
