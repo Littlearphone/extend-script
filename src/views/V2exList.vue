@@ -1,8 +1,7 @@
 <template>
-  <!-- 主题切换：贴右侧边缘竖着放，不挡内容；点一下在 自动 → 浅色 → 深色 之间切 -->
-  <button class="v2ex-theme" :class="{ 'is-dark': isDark }" :title="themeTitle" @click="cycleTheme">
-    <span class="v2ex-theme-icon">{{ themeMode === 'auto' ? 'A' : (isDark ? '☾' : '☀') }}</span>
-    <span class="v2ex-theme-text">{{ themeLabel }}</span>
+  <!-- 主题切换：圆形图标按钮，贴右侧边缘竖着放；当前模式放 title 里，文字不占地方 -->
+  <button class="v2ex-theme" :class="{ 'is-dark': isDark }" :title="themeTitle" :aria-label="themeTitle" @click="cycleTheme">
+    <span class="v2ex-theme-icon">{{ themeMode === 'auto' ? '◐' : (isDark ? '☾' : '☀') }}</span>
   </button>
 
   <!-- 卡片化是纯 CSS（不动 V2EX 的 DOM，分页/排序都不受影响），这里只放两样东西：
@@ -707,30 +706,39 @@ html:has([v2ex-view=list]) {
 .v2ex-theme {
   position: fixed;
   top: 50%;
-  right: 10px;
+  right: 12px;
   z-index: 3;
   display: flex;
-  gap: 4px;
-  align-items: center;
-  padding: 6px 9px;
-  font-size: 12px;
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  font-size: 15px;
   color: #555;
   cursor: pointer;
   pointer-events: auto;
+  align-items: center;
+  justify-content: center;
   border: 1px solid #00000014;
-  border-radius: 999px;
+  border-radius: 50%;
   background: #ffffffe6;
   transform: translateY(-50%);
   box-shadow: 0 6px 18px #0000001f;
   backdrop-filter: blur(6px);
+  transition: transform .12s ease, color .12s ease, background .12s ease;
 
   &:hover {
     color: #111;
+    transform: translateY(-50%) scale(1.06);
   }
 
+  // 图标（☀ ☾ ◐ 这些字形基线各不相同，靠 flex 居中而不是 line-height）
   .v2ex-theme-icon {
-    font-size: 13px;
+    display: flex;
+    width: 100%;
+    height: 100%;
     line-height: 1;
+    align-items: center;
+    justify-content: center;
   }
 
   &.is-dark {
