@@ -2,6 +2,13 @@ import './styles/index.scss'
 import { createApp } from 'vue'
 import { MAPPINGS } from './mappings'
 import { logger } from './utils/logger.js'
+import { installCopyGuard } from './utils/copy-guard.js'
+
+// 必须在 document-start 就装：页面的复制限制是解析阶段注册的监听器，
+// 等 DOMContentLoaded 再装就晚了一步（详见 utils/copy-guard.js）
+if (/(^|\.)csdn\.net$/.test(location.hostname)) {
+  installCopyGuard()
+}
 
 
 function loadModule(module) {

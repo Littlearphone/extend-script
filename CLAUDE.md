@@ -89,6 +89,25 @@ node publish.js
 - **V2EX 开了 Trusted Types**（`innerHTML` 赋字符串直接抛异常）：所以内置样式的注入必须用 `textContent`（见 `vite.config.js` 的 `inlineCss`），`utils/index.js` 的 `addStyle` 同理。`v-html` 渲染弹窗内容在 V2EX 上是能用的（Vue 走的是 `el.innerHTML = value`，页面有 TT 策略时由浏览器裁决；真被拦就把策略加进 `trustedTypes.createPolicy`）。
 
 
+### CSDN 阅读模式（`CsdnArticle.vue`）
+
+只保留**正文 + 评论区**，其余（顶部工具栏、左右侧栏、两侧广告位 `simple-ad-slot`、推荐流、作者信息条、上一篇/下一篇、底部）全部隐藏。右侧一个圆形图标按钮切换，状态记在 `csdn-reading-mode`（默认开）。
+
+- **阅读模式自己铺"白纸"**（`background: #fff` + 去掉 `has-simple-ad-background-skin` / `is-vip-skin` 类）：CSDN 会给部分文章挂"广告皮肤"，整页刷成深色星空底，但正文颜色还是深色 → **黑底黑字**。不要指望"继承站点前景色"，皮肤一换就翻车；白纸模式最稳。相应地，代码块背景用 `rgba(127,127,127,.12)`、blockquote 用 `color: inherit` + 半透明边框，别再写死浅色。
+- **去折叠**：遮罩（`.hide-article-box`）和"登录后阅读全文"按钮直接删——内容本来就在 DOM 里；`#article_content` / `#content_views` 的 `max-height` / `height` / `overflow` 清掉；`pre.set-code-hide` 的折叠还原并删掉 `.hide-preCode-box`。**只有在真的存在折叠标记（遮罩/展开按钮/行内 max-height）时才清高度**，否则会把站点自己设的布局一起破坏。页面是异步往里塞这些的，所以挂 `MutationObserver`（`style`/`class`/`childList`）反复补。
+- **折叠评论**：`#lookFlodComment .look-more-flodcomment` 点一下展开，`#btnMoreComment` 点一下加载更多。标记**记在元素上**（`dataset`）而不是一次性布尔值——评论区异步渲染，第一个跑的时候那个链接可能是空壳或者会被替换掉，用布尔值就永久跳过了新出现的那个（踩过）。评论区内部的按钮不要藏，藏着就没法继续加载。
+- **标题重复**：CSDN 常见"页头标题 + 正文开头的 h1"是同一句，`dedupeTitle()` 比一下文本，重复就把页头那份藏掉。
+- **解除复制限制**在 `src/utils/copy-guard.js`，由 `main.js` 在 **document-start** 调用（`csdn.net` 才装）。晚于页面脚本就没用了：`stopImmediatePropagation` 只对"之后注册"的监听器有效。两手都做：捕获阶段拦 `copy/cut/paste/selectstart/contextmenu/dragstart/beforecopy`，以及把 `document/window/body` 的 `on*` 处理器属性定义成"getter 永远 null、setter 空"，页面写不进去；`<body oncopy>` 这种行内属性也清掉。**只 `stopImmediatePropagation`，绝不 `preventDefault`**——原生复制/选中/右键要照常发生。CSS 侧用 `body[blog-csdn-net] #content_views *` 这种带属性选择器的 `!important` 规则压 `user-select: none`（多一个属性选择器，特异性就高于页面后插入的 `#content_views *`）。**输入框里的 `paste` / `Ctrl+C/V` 不拦**（富文本评论框要靠这些事件）。
+
+### 测试 CSDN 的注意点
+
+`blog.csdn.net/.../article/details/` 上有 WAF：**headless 和 headed 的 Playwright 都被 521 "请进行安全验证"挡住**，去掉 `sec-ch-ua` 之类头更是直接 403。可行的两条路：
+
+1. **真实 HTML 快照 + 路由拦截**（`tests/fixtures/csdn-article*.html`，用 `Invoke-WebRequest` 抓，服务端能拿 200）：在真实域名下渲染，再注入一份"敌意层"复刻 CSDN 的防护（属性处理器 + addEventListener + `user-select: none` 样式 + 限高遮罩 + 代码折叠），用来验证我们的解除逻辑。事件穿透、复制、展开都能断言。
+2. **过一次验证**（`tests/csdn-verify-once.mjs`）：开一个独立 profile 的**有头** Edge，人工点一次验证，`storageState` 存到 `tests/fixtures/csdn-state.json`。之后 live 测试用 `launchPersistentContext(headless: false)` 复用这个 profile 就能进——**headless 即使带同一份 cookie 也不行**，WAF 认的是浏览器指纹。
+
+复制要用端到端验证：选中正文 → `document.execCommand('copy')` → 读 `navigator.clipboard.readText()`（context 里要 `grantPermissions(['clipboard-read','clipboard-write'])`），看剪贴板里真的有正文，不能只看"处理器没被调用"。
+
 ### 构建机制 (vite.config.js)
 
 - Vite `lib` 模式，格式 UMD，入口 `src/main.js`。
