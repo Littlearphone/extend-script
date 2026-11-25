@@ -3,6 +3,8 @@
   <div class="nihility-download-mini" v-if="state.collapsed" @click="expandDownloadDialog">
     <span class="mini-dot" :class="{ 'is-running': state.running }"></span>
     <span class="mini-text">{{ miniText }}</span>
+    <!-- 下载中直接在收起的小条上给「停止」：弹窗已经自动收了，别让用户为了停止再点开 -->
+    <span class="mini-stop" v-if="state.running" title="停止下载（当前这一集会被中断）" @click.stop="stopRequested = true">停止</span>
     <span class="mini-action">展开</span>
     <!-- 下载中不给"彻底关掉"：那会把循环一起带走 -->
     <span class="mini-close" v-if="!state.running" title="关掉（会丢掉这次的列表）" @click.stop="closeDownloadDialog">×</span>
@@ -261,11 +263,16 @@ function statusText(row) {
 function statusDetail(row) {
   if (row.phase !== 'running') return statusText(row)
   const speed = formatSpeed(row.speed)
+  // 分轨速度：合计掉下去时，一眼能看出是"某条轨下完了"还是"某条轨真的卡了"
+  const perTrack = Object.entries(row.trackSpeeds || {})
+    .filter(([, value]) => value > 0)
+    .map(([name, value]) => `${name} ${formatSpeed(value)}`)
+    .join(' · ')
   // 每条连接的速度：总速度上不去时，先看是"连接开得少"还是"每条本身就这么快"
   const perLink = row.speed && liveConnections.value > 0
     ? ` · 每条 ${formatSpeed(row.speed / liveConnections.value)}`
     : ''
-  return `${row.label || '准备中'} ${formatPercent(row.received, row.total)}${speed ? ` · ${speed}` : ''}${perLink}`
+  return `${row.label || '准备中'} ${formatPercent(row.received, row.total)}${speed ? ` · 合计 ${speed}` : ''}${perTrack ? ` · ${perTrack}` : ''}${perLink}`
 }
 
 // click 的 target 是"按下与松开两处的共同祖先"：在输入框里按下、拖到弹窗外松手，
@@ -315,6 +322,7 @@ async function load() {
       label: '',
       percent: 0,
       speed: 0,
+      trackSpeeds: {},
       tracksKnown: false,
       received: 0,
       total: 0,
@@ -403,20 +411,32 @@ async function downloadRows(targets) {
   // 点完「下载」就把窗口收起来：用户接下来大概率是去看视频，弹窗挡在那儿没道理。
   // 收成右下角小条后仍然显示进度和速度（miniText），想展开/停止点一下小条就行。
   collapseDownloadDialog()
+  let stopped = false
   try {
     // **跨视频串行**：一个视频下完再下一个（单个视频内部：视频轨与音频轨并行、各自可再分片）。
     // 一次提交多个视频会同时打同一站点，把 HTTP 连接占满，后面的请求排队甚至被 CDN 拒。
     for (const row of list) {
       if (stopRequested.value) {
+        stopped = true
         notice.value = `已停止，还剩 ${state.total - state.finished} 个没下`
         break
       }
       await downloadRow(row, directory)
+      // 停止会在当前这一集**下载途中**生效（抛 AbortError），所以这里要再判一次：
+      // 否则会把它算成"下完了一个"，而且继续往下走。
+      if (stopRequested.value) {
+        stopped = true
+        notice.value = `已停止，还剩 ${state.total - state.finished} 个没下`
+        break
+      }
       state.finished++
     }
   } finally {
     state.running = false
     state.dialogOpen = true
+    // 停止是把窗口重新打开：用户刚才是主动中断的，多半想看看断了在哪、要不要重来。
+    // （不这么做的话弹窗还停在上一步自动收起的状态，看起来像"下载按钮都没了"。）
+    if (stopped) expandDownloadDialog()
   }
 }
 
@@ -425,6 +445,7 @@ async function downloadRow(row, directory) {
   row.label = '取流地址'
   row.percent = 0
   row.speed = 0
+  row.trackSpeeds = {}
   const pending = []
   // 两条轨各自报进度，进度条按**合计字节**走（视频比音频大一个量级，分别显示会一个飞快一个龟速）
   const trackProgress = new Map()
@@ -440,8 +461,22 @@ async function downloadRow(row, directory) {
   // 状态就等于一秒重渲染表格几百次——这部分开销在并发高时不该赔进去。所以把「改状态」
   // 节流到 10Hz；速度采样本身也是 300ms 一次，不受影响。
   let lastEmitAt = 0
+  // 每条轨自己的速度：只用于悬停提示。合计速度会随"某条轨下完"掉下去，那是算术，
+  // 不是真的变慢——要判断是视频慢还是音频慢，得分开看。
+  const trackSamples = new Map()
   const reportOf = label => progress => {
     trackProgress.set(label, progress)
+    // 分轨速度按每次真实上报采样（不受下面 10Hz 节流影响）
+    const trackNow = performance.now()
+    const trackSample = trackSamples.get(label)
+    if (!trackSample) {
+      trackSamples.set(label, { at: trackNow, bytes: progress.received, speed: 0 })
+    } else if (trackNow - trackSample.at >= 300) {
+      const instant = (progress.received - trackSample.bytes) / ((trackNow - trackSample.at) / 1000)
+      trackSample.speed = trackSample.speed > 0 ? trackSample.speed * 0.65 + instant * 0.35 : instant
+      trackSample.at = trackNow
+      trackSample.bytes = progress.received
+    }
     const now = performance.now()
     if (now - lastEmitAt < 100) return
     lastEmitAt = now
@@ -469,6 +504,10 @@ async function downloadRow(row, directory) {
       sampledAt = now
       sampledBytes = received
     }
+    // 分轨速度（只给悬停提示看）
+    row.trackSpeeds = Object.fromEntries(
+      [...trackSamples].map(([name, sample]) => [name, sample.speed]).filter(([, speed]) => speed > 0)
+    )
   }
   try {
     const streams = await resolveStreams(row.item, { preferQn: state.quality })
@@ -537,8 +576,17 @@ async function downloadRow(row, directory) {
     for (const task of pending) {
       await discardDownloadedFile(task).catch(() => {})
     }
-    row.phase = 'error'
     row.speed = 0
+    if (error?.name === 'AbortError') {
+      // 用户按的停止，不算失败：把这行退回"待下载"，让他还能重下
+      row.phase = 'idle'
+      row.percent = 0
+      row.received = 0
+      row.tracksKnown = false
+      row.label = ''
+      return
+    }
+    row.phase = 'error'
     row.message = error.message || String(error)
     logger.warn(`下载失败：${row.item.title}`, error)
   }
@@ -548,16 +596,18 @@ async function downloadRow(row, directory) {
 // 进度由调用方给的 report 处理（两条轨并行时要合计，不能各写各的）
 async function saveTrack(row, directory, filename, urls, label, report) {
   row.label = label
+  // 停止信号一路传到读流循环里，按下去立刻生效（不用等这一集下完）
+  const shouldStop = () => stopRequested.value
   if (!directory) {
     // 降级路径（没有 File System Access）：只能直接交给浏览器下载，没法先临时名再改名
-    await saveStreamAsDownload(filename, urls, report)
+    await saveStreamAsDownload(filename, urls, report, shouldStop)
     return null
   }
   if (await existsWithContent(directory, filename)) {
     row.skipped = true
     return null
   }
-  return writeStreamToFile(directory, filename, urls, report, { concurrency: state.concurrency })
+  return writeStreamToFile(directory, filename, urls, report, { concurrency: state.concurrency, shouldStop })
 }
 
 onMounted(() => {
@@ -616,6 +666,15 @@ onUnmounted(() => {
     &.is-running {
       background-color: #409eff;
       animation: download-pulse 1s ease-in-out infinite;
+    }
+  }
+
+  .mini-stop {
+    color: #ffb36b;
+    padding: 0 .1em;
+
+    &:hover {
+      color: #ffd479;
     }
   }
 

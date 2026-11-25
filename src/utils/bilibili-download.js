@@ -208,6 +208,86 @@ async function openFirstStream(urls, limitFor) {
   throw lastError || new Error('没有可用的下载地址')
 }
 
+// 「停止」用的中止信号：抛 AbortError，让上层能区分"用户按了停止"和"真的下失败了"。
+// 检查点放在**每次读块**里——只检查"两个视频之间"的话，按下停止要等当前这一集下完才生效。
+function abortError() {
+  const error = new Error('已停止')
+  error.name = 'AbortError'
+  return error
+}
+
+function throwIfStopped(shouldStop) {
+  if (shouldStop?.()) throw abortError()
+}
+
+// 读一块最长等多久。有些 CDN 节点会把连接"吊住"（TCP 通着、但几十毫秒才吐一点），
+// 几条连接都这样就成了"看着在跑、速度只有一百多 K"。超时按失败处理 → 换镜像重试。
+const READ_IDLE_TIMEOUT = 15_000
+
+function readWithTimeout(reader) {
+  let timer = null
+  const timeout = new Promise((resolve, reject) => {
+    timer = setTimeout(() => reject(new Error('读取超时：15 秒没有新数据')), READ_IDLE_TIMEOUT)
+  })
+  return Promise.race([reader.read(), timeout]).finally(() => clearTimeout(timer))
+}
+
+// ---- 镜像 host 的实测吞吐 ----
+//
+// B 站给的 `base_url` + `backup_url[]` 是同一个文件的多个镜像，但它们**不是一样快**：
+// 常见情况是一个节点几十 MB/s、另一个只有几百 KB/s。以前是死板轮询，慢的那个会一直
+// 拖着一半的分片（videos 又大，看着就是"4 条连接只有一百多 K"）。现在按实测速度挑。
+const hostRates = new Map()   // host → { bytes, ms }（指数衰减，只代表最近的样本）
+
+function recordHostRate(host, bytes, ms) {
+  if (!bytes || ms <= 0) return
+  const current = hostRates.get(host) || { bytes: 0, ms: 0 }
+  current.bytes = current.bytes * 0.6 + bytes
+  current.ms = current.ms * 0.6 + ms
+  hostRates.set(host, current)
+}
+
+function rateOf(host) {
+  const stat = hostRates.get(host)
+  return stat && stat.ms > 0 ? stat.bytes / stat.ms : 0   // bytes per ms
+}
+
+// 选一个镜像：重试按轮转（别再压刚失败的那个）；首次下发按**实测速度的平方加权**随机。
+//
+// 为什么是平方而不是线性：一个 20MB/s 的节点和一个 1.2MB/s 的节点，线性加权还会给慢的
+// 4% 左右分片，可它一片 4MB 要下 3 秒，等于白白占住一个 worker；平方之后慢节点的份额
+// 掉到千分之几，同时又保留"它万一恢复了还能被重新采样"的可能。另外留 5% 纯随机探底。
+//
+// `sampled` 记着"已经派过活"的 host：**每个 host 只探一次**。以前是拿"当前还没测出速度的
+// host 列表"来派，可是慢节点要跑 1 秒多才出速度，这期间每次新派发都会再挑中它 —— 结果
+// 一个慢镜像能吃掉 25% 的分片。
+function chooseMirror(mirrors, sampled, index, attemptOffset, attempt) {
+  if (mirrors.length === 1) return mirrors[0]
+  if (attempt > 0) return mirrors[(index + attemptOffset + attempt) % mirrors.length]
+  const fresh = mirrors.find(url => !sampled.has(hostOf(url)))
+  if (fresh) {
+    sampled.add(hostOf(fresh))
+    return fresh
+  }
+  if (Math.random() < 0.05) return mirrors[Math.floor(Math.random() * mirrors.length)]
+  const weights = mirrors.map(url => rateOf(hostOf(url)) ** 2)
+  const sum = weights.reduce((total, weight) => total + weight, 0)
+  if (!sum) return mirrors[Math.floor(Math.random() * mirrors.length)]
+  let pick = Math.random() * sum
+  for (let i = 0; i < mirrors.length; i++) {
+    pick -= weights[i]
+    if (pick <= 0) return mirrors[i]
+  }
+  return mirrors[mirrors.length - 1]
+}
+
+// 每个文件下完打一条吞吐日志：出问题时（比如"4 连接只有一百多 K"）能直接看出是
+// 连接没开起来、还是单条本来就慢、还是中途重试/超时了。
+function logThroughput(filename, bytes, startedAt, links) {
+  const seconds = Math.max((performance.now() - startedAt) / 1000, 0.001)
+  log(`${filename}：${formatBytes(bytes)} / ${seconds.toFixed(1)}s = ${formatBytes(bytes / seconds)}/s（${links} 条连接）`)
+}
+
 export async function existsWithContent(directory, filename) {
   try {
     const handle = await directory.getFileHandle(filename)
@@ -231,20 +311,22 @@ export function tempNameFor(filename) {
 }
 
 // 写到临时名，**返回一个待发布的句柄**；正式名字由调用方在"这一对轨都下完"之后才落地。
-export async function writeStreamToFile(directory, filename, urls, onProgress, { concurrency = 1 } = {}) {
+export async function writeStreamToFile(directory, filename, urls, onProgress, { concurrency = 1, shouldStop } = {}) {
   // 名额表跟着这一次下载走：播放器换集/换 CDN 之后，哪些 host 算"播放器正在用的"会变
   const limitFor = makeConnectionLimit()
   if (concurrency > 1) {
     try {
-      return await writeStreamChunked(directory, filename, urls, onProgress, concurrency, limitFor)
+      return await writeStreamChunked(directory, filename, urls, onProgress, concurrency, limitFor, shouldStop)
     } catch (error) {
+      // 用户按了停止：**不要**再退回整段重下，直接往上抛
+      if (error?.name === 'AbortError') throw error
       // 分片不可用（服务端忽略 Range / 镜像 403 / 超时 / 可用镜像不足）就悄悄退回"整段一条流"：
       // 用户要的是"下下来"，不是"必须并发"。
       log(`并发分片改用整段：${error.message}`)
       onProgress?.({ received: 0, total: 0 })
     }
   }
-  return writeStreamSerial(directory, filename, urls, onProgress, limitFor)
+  return writeStreamSerial(directory, filename, urls, onProgress, limitFor, shouldStop)
 }
 
 function log(message) {
@@ -253,7 +335,8 @@ function log(message) {
   }
 }
 
-async function writeStreamSerial(directory, filename, urls, onProgress, limitFor) {
+async function writeStreamSerial(directory, filename, urls, onProgress, limitFor, shouldStop) {
+  const startedAt = performance.now()
   const tempName = tempNameFor(filename)
   const fileHandle = await directory.getFileHandle(tempName, { create: true })
   const writable = await fileHandle.createWritable()
@@ -267,16 +350,20 @@ async function writeStreamSerial(directory, filename, urls, onProgress, limitFor
     let received = 0
     onProgress?.({ received, total })
     for (;;) {
-      const { done, value } = await reader.read()
+      throwIfStopped(shouldStop)
+      const { done, value } = await readWithTimeout(reader)
       if (done) break
       await writable.write(value)
       received += value.byteLength
       onProgress?.({ received, total })
     }
     await writable.close()
+    logThroughput(filename, total, startedAt, 1)
     return { fileHandle, directory, tempName, filename }
   } catch (error) {
     await writable.abort().catch(() => {})
+    // 停掉/失败的临时文件别留在目录里（0 字节的 .part 也是垃圾）
+    await directory.removeEntry(tempName).catch(() => {})
     throw error
   } finally {
     // 名额在"读到流结尾"之后才还（不是请求一返回就还）：连接实际被占着的是整段读取期间
@@ -292,7 +379,9 @@ async function writeStreamSerial(directory, filename, urls, onProgress, limitFor
 //   - 分片摊到**不同镜像 host**（`base_url` + `backup_url[]` 本来就是同一份文件的镜像）；
 //   - 每个 host 能开几条看它**是不是播放器正在用的那个 host**，名额按 host 全局排队
 //     （见 acquireSlot：视频轨/音频轨/所有分片共用同一份名额）；
-//   - 分片请求带 `priority: 'low'`，尽量不抢播放器的带宽；
+//   - 分片请求**不加** `priority: 'low'`：实测低优先级会让 CDN/浏览器把我们的流压在后面，
+//     4 条连接只跑到一百多 KB/s（IDM 同一个视频能到近百 MB/s）；播放器优先是靠 host 名额保的，
+//     不靠请求优先级。
 //   - 某一片失败先**换镜像重试**，全都失败才抛错、由 writeStreamToFile 退回整段。
 const CHUNK_SIZE = 4 * 1024 * 1024
 // 一片最多试几次。**不能**用"镜像数"当预算：只有一个镜像时那等于一次都不重试，
@@ -386,7 +475,8 @@ async function probeTotalSize(urls, limitFor) {
   return 0
 }
 
-async function writeStreamChunked(directory, filename, urls, onProgress, concurrency, limitFor) {
+async function writeStreamChunked(directory, filename, urls, onProgress, concurrency, limitFor, shouldStop) {
+  const startedAt = performance.now()
   const mirrors = mirrorUrls(urls).filter(url => !rangeIgnoringHosts.has(hostOf(url)))
   if (!mirrors.length) throw new Error('这些镜像不支持 Range（已记下，本页不再尝试分片）')
   const total = await probeTotalSize(mirrors, limitFor)
@@ -408,6 +498,9 @@ async function writeStreamChunked(directory, filename, urls, onProgress, concurr
   // 每片"已经写到哪了"。失败重试时从这里继续要 Range，而不是从片头重下——
   // 这样已写入的字节不用退回计数，进度条也就不会因为一次重试往回跳。
   const progressOfChunk = new Map()
+  // 已经派过活的 host：每个镜像只探一次。以前是"看谁还没测出速度就派给谁"，
+  // 但慢节点要跑一秒多才出速度，这期间新派发会反复挑中它。
+  const sampledHosts = new Set()
 
   // 下载一片；成功返回 true。失败时保留断点，下一次调用会接着要。
   const fetchChunk = async (index, attemptOffset) => {
@@ -417,15 +510,17 @@ async function writeStreamChunked(directory, filename, urls, onProgress, concurr
     // 这一片失败就先换镜像重试：几个 backup 本来就是同一份文件的镜像，一个节点抽风不该让
     // 整个文件退回整段重下。每轮错开起点，让请求摊到不同 host 上。
     for (let attempt = 0; attempt < CHUNK_ATTEMPTS; attempt++) {
+      throwIfStopped(shouldStop)
       const from = progressOfChunk.get(index) ?? chunkStart
       if (from > end) return true
-      const url = mirrors[(index + attemptOffset + attempt) % mirrors.length]
+      const url = chooseMirror(mirrors, sampledHosts, index, attemptOffset, attempt)
       // 名额按 host 拿：两条轨的分片都排同一个 host 的队，所以同 host 的并发是精确的
       const release = await acquireSlot(hostOf(url), limitFor(url))
+      const fetchStartedAt = performance.now()
+      let fetchedBytes = 0
       try {
         const response = await cdnFetch(url, {
           headers: { Range: `bytes=${from}-${end}` },
-          priority: 'low',
         })
         if (response.status === 200) {
           // Range 被无视了：这个 host 以后别想分片，换下一个镜像
@@ -438,12 +533,14 @@ async function writeStreamChunked(directory, filename, urls, onProgress, concurr
         const reader = response.body.getReader()
         let offset = from
         for (;;) {
-          const { done: finished, value } = await reader.read()
+          throwIfStopped(shouldStop)
+          const { done: finished, value } = await readWithTimeout(reader)
           if (finished) break
           // 各片写各自的偏移：不用在内存里按序拼装，也不用落临时分片
           await writable.write({ type: 'write', position: offset, data: value })
           offset += value.byteLength
           received += value.byteLength
+          fetchedBytes += value.byteLength
           progressOfChunk.set(index, offset)
           onProgress?.({ received, total })
         }
@@ -451,9 +548,12 @@ async function writeStreamChunked(directory, filename, urls, onProgress, concurr
         if (offset <= end) throw new Error(`分片 ${index} 只到 ${offset}/${end}`)
         return true
       } catch (error) {
+        if (error?.name === 'AbortError') throw error
         lastError = error
         log(`分片 ${index} 走 ${hostOf(url)} 失败（${attempt + 1}/${CHUNK_ATTEMPTS}）：${error.message}`)
       } finally {
+        // 用"这批实际读到的字节 / 这段实际耗时"记这个 host 的实测吞吐
+        recordHostRate(hostOf(url), fetchedBytes, performance.now() - fetchStartedAt)
         release()
       }
     }
@@ -462,6 +562,7 @@ async function writeStreamChunked(directory, filename, urls, onProgress, concurr
 
   const runWorker = async workerIndex => {
     while (!failReason) {
+      throwIfStopped(shouldStop)
       const index = nextIndex++
       if (index >= chunkCount) return
       try {
@@ -479,6 +580,7 @@ async function writeStreamChunked(directory, filename, urls, onProgress, concurr
   // 这样进度只会原地停一下，不会掉回 0（用户能看见的唯一一次回退就来自整体重下）。
   const fillMissingSerially = async () => {
     for (let index = 0; index < chunkCount; index++) {
+      throwIfStopped(shouldStop)
       if (done.has(index)) continue
       await fetchChunk(index, 0)
       done.add(index)
@@ -493,9 +595,12 @@ async function writeStreamChunked(directory, filename, urls, onProgress, concurr
     }
     await writable.truncate(total)
     await writable.close()
+    logThroughput(filename, total, startedAt, workers)
     return { fileHandle, directory, tempName, filename }
   } catch (error) {
     await writable.abort().catch(() => {})
+    // 停掉/失败的临时文件别留在目录里（0 字节的 .part 也是垃圾）
+    await directory.removeEntry(tempName).catch(() => {})
     throw error
   }
 }
@@ -522,7 +627,7 @@ export async function discardDownloadedFile({ directory, tempName }) {
   await directory.removeEntry(tempName).catch(() => {})
 }
 
-async function readAllToBlob(urls, onProgress) {
+async function readAllToBlob(urls, onProgress, shouldStop) {
   // 降级路径同样是两条轨并行下，一样走 host 名额
   const { response, release } = await openFirstStream(urls, makeConnectionLimit())
   try {
@@ -536,7 +641,8 @@ async function readAllToBlob(urls, onProgress) {
     let batched = 0
     let received = 0
     for (;;) {
-      const { done, value } = await reader.read()
+      throwIfStopped(shouldStop)
+      const { done, value } = await readWithTimeout(reader)
       if (done) break
       batch.push(value)
       batched += value.byteLength
@@ -556,8 +662,8 @@ async function readAllToBlob(urls, onProgress) {
 }
 
 // 降级路径：没有 File System Access（如 Firefox）时，整份读进内存再交给浏览器下载。
-export async function saveStreamAsDownload(filename, urls, onProgress) {
-  const blob = await readAllToBlob(urls, onProgress)
+export async function saveStreamAsDownload(filename, urls, onProgress, shouldStop) {
+  const blob = await readAllToBlob(urls, onProgress, shouldStop)
   const url = URL.createObjectURL(blob)
   const anchor = document.createElement('a')
   anchor.href = url

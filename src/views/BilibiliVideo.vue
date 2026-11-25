@@ -361,13 +361,13 @@ window.addEventListener('beforeunload', () => {
   livePollingActive = false
 })
 
-// 切走那一刻视频是否在播。恢复可见时要重跑检测的**唯一**理由是把在播的视频接回去
-// （RAF 在后台被节流、`ended` 监听可能没挂上），而不是把用户手动暂停的视频抢回来播：
-// detectVideoPlaying 一进去就是"paused 就 play()、不在网页全屏就点全屏"，
-// 无条件重跑等于每次切窗口都重新开播一次、并把 B 站后台回收掉的播放器再拉进网页全屏。
+// 切走那一刻视频是否在播。恢复可见时唯一需要补的是"播完自动续播"的监听：
+// RAF 循环在后台被节流、`listeningVideoFinish` 可能没来得及挂上。
+// **不要**在这里重跑 detectVideoPlaying：它一进去就是"paused 就 play()、不在网页全屏就去点
+// 全屏"，重跑等于每次切窗口回来都可能重新全屏一次 —— 用户要的是"还是我离开时的样子"。
 let resumeOnVisible = false
 
-// 标签页恢复可见时重新检测，并关闭可能已弹出的推荐倒计时
+// 标签页恢复可见时补监听，并关闭可能已弹出的推荐倒计时
 document.addEventListener('visibilitychange', () => {
   if (document.hidden) {
     const video = document.querySelector('video')
@@ -390,9 +390,10 @@ document.addEventListener('visibilitychange', () => {
   }
   if (resumeOnVisible) {
     handlingVideoEnded = false
-    detectVideoPlaying()
+    // 只把 ended 监听挂回去：不碰播放状态、不碰网页全屏
+    listeningVideoFinish()
   } else {
-    logger.debug('恢复可见：切走时本就没在播，不重跑检测')
+    logger.debug('恢复可见：切走时本就没在播，不碰任何状态')
   }
 })
 
