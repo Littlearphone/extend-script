@@ -1,7 +1,21 @@
 <template>
-  <!-- 主题切换：圆形图标按钮，贴右侧边缘竖着放；当前模式放 title 里，文字不占地方 -->
+  <!-- 主题切换：圆形图标按钮，贴右侧边缘竖着放；当前模式放 title 里，文字不占地方。
+       图标用内联 SVG 而不是 ☀/☾ 这类字形——那些字形的"墨迹"不在 em 框中心，
+       不管怎么 line-height/flex 都看着偏；SVG 的几何中心就是盒子中心。 -->
   <button class="v2ex-theme" :class="{ 'is-dark': isDark }" :title="themeTitle" :aria-label="themeTitle" @click="cycleTheme">
-    <span class="v2ex-theme-icon">{{ themeMode === 'auto' ? '◐' : (isDark ? '☾' : '☀') }}</span>
+    <svg v-if="themeMode === 'light'" class="v2ex-theme-icon" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
+      <circle cx="12" cy="12" r="4.2" fill="currentColor"/>
+      <g stroke="currentColor" stroke-width="2" stroke-linecap="round">
+        <path d="M12 2.2v2.2M12 19.6v2.2M2.2 12h2.2M19.6 12h2.2M5.1 5.1l1.6 1.6M17.3 17.3l1.6 1.6M18.9 5.1l-1.6 1.6M6.7 17.3l-1.6 1.6"/>
+      </g>
+    </svg>
+    <svg v-else-if="isDark" class="v2ex-theme-icon" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
+      <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z" fill="currentColor"/>
+    </svg>
+    <svg v-else class="v2ex-theme-icon" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
+      <circle cx="12" cy="12" r="8.6" fill="none" stroke="currentColor" stroke-width="2"/>
+      <path d="M12 3.4a8.6 8.6 0 0 1 0 17.2Z" fill="currentColor"/>
+    </svg>
   </button>
 
   <!-- 卡片化是纯 CSS（不动 V2EX 的 DOM，分页/排序都不受影响），这里只放两样东西：
@@ -731,14 +745,12 @@ html:has([v2ex-view=list]) {
     transform: translateY(-50%) scale(1.06);
   }
 
-  // 图标（☀ ☾ ◐ 这些字形基线各不相同，靠 flex 居中而不是 line-height）
+  // SVG 图标：它自己就是 16×16 的方块，flex 居中就是真居中
   .v2ex-theme-icon {
-    display: flex;
-    width: 100%;
-    height: 100%;
-    line-height: 1;
-    align-items: center;
-    justify-content: center;
+    display: block;
+    width: 16px;
+    height: 16px;
+    flex: none;
   }
 
   &.is-dark {
