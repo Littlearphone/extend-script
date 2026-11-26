@@ -103,6 +103,8 @@ function unseal() {
   dedupeTitle()
   // 7) 正文开头那行"作者：xxx"是普通段落，和正文同字号显得没层次，标一下降级成说明文字
   markAuthorLine()
+  // 8) 统一渲染文章头（标题 + 署名），站点那三处散落的标题就别显示了
+  if (reading.value) renderReadHeader()
 }
 
 function normalizeTitle(text) {
@@ -133,6 +135,85 @@ function markAuthorLine() {
   })
 }
 
+// ---- 阅读模式自己的文章头：标题 + 署名行 ----
+// 站点那套（页头标题 + 作者信息条 + 正文里再重复一遍标题）散在三处，字号也各不相同，
+// 拼起来不像个标题。这里统一抽成"大标题 + 一行灰字署名"，下面压一条细分隔线，
+// 正文从干净的位置开始。
+let readHeader = null
+
+function collectHeaderInfo() {
+  const titleBox = document.querySelector('.article-title-box .title-article, .article-title-box h1')
+  const contentHeading = document.querySelector('#content_views h1, #content_views h2')
+  const title = (titleBox?.innerText || contentHeading?.innerText || '').trim()
+
+  const infoText = (document.querySelector('.article-info-box')?.innerText || '').replace(/\s+/g, ' ')
+  const authorParagraph = [...document.querySelectorAll('#content_views p')]
+    .slice(0, 3)
+    .find(paragraph => AUTHOR_LINE.test(paragraph.textContent.trim()))
+  const authorText = (authorParagraph?.textContent || '').trim()
+
+  // 作者有两条来源：正文开头的"作者：xxx"，或页头作者信息条里的名字元素
+  // （新版 simple 布局是 .simple-author-name，老布局是 .follow-nickName）
+  const authorFromInfo = (
+    document.querySelector('.article-info-box .simple-author-name')
+      ?.innerText
+    || document.querySelector('.article-info-box .follow-nickName')?.innerText
+    || document.querySelector('.article-info-box .simple-author-profile')?.innerText
+    || ''
+  ).trim()
+  const author = authorText.replace(AUTHOR_LINE, '').split(/[，,]/)[0].trim() || authorFromInfo
+
+  const date = infoText.match(/(\d{4}-\d{2}-\d{2}(?:[ T]\d{2}:\d{2}(?::\d{2})?)?)/)?.[1] || ''
+  // 阅读数可能是 337 / 2.9w / 1.2万
+  const views = infoText.match(/([\d.]+\s*[万亿wkWK]?)\s*(?:次)?阅读/)?.[1] || ''
+
+  return { title, author, date, views, authorLineLength: authorText.length }
+}
+
+function renderReadHeader() {
+  const content = document.querySelector('#article_content')
+  if (!content) return
+  const info = collectHeaderInfo()
+  if (!info.title) return
+
+  if (!readHeader || !readHeader.isConnected) {
+    readHeader = document.createElement('div')
+    readHeader.className = 'csdn-read-head'
+    readHeader.innerHTML = '<h1 class="csdn-read-title"></h1><div class="csdn-read-meta"></div>'
+    content.insertBefore(readHeader, content.firstChild)
+  }
+
+  const titleElement = readHeader.querySelector('.csdn-read-title')
+  if (titleElement.textContent !== info.title) titleElement.textContent = info.title
+
+  const metaElement = readHeader.querySelector('.csdn-read-meta')
+  const parts = [info.author, info.date, info.views && `${info.views} 阅读`].filter(Boolean)
+  const signature = parts.join('|')
+  if (metaElement.dataset.signature !== signature) {
+    metaElement.dataset.signature = signature
+    metaElement.textContent = ''
+    parts.forEach((part, index) => {
+      if (index) {
+        const dot = document.createElement('span')
+        dot.className = 'csdn-read-dot'
+        dot.textContent = '·'
+        metaElement.appendChild(dot)
+      }
+      const span = document.createElement('span')
+      span.textContent = part
+      metaElement.appendChild(span)
+    })
+  }
+
+  // 署名已经进文章头了，正文开头那行就别再重复一遍（过长的说明性段落保留）
+  readHeader.dataset.absorbedAuthor = info.authorLineLength && info.authorLineLength <= 40 ? '1' : '0'
+}
+
+function removeReadHeader() {
+  readHeader?.remove()
+  readHeader = null
+}
+
 function scheduleUnseal() {
   if (stopped || pending) return
   pending = requestAnimationFrame(() => {
@@ -149,6 +230,11 @@ function applyReading() {
   document.body.classList.toggle('csdn-reading', reading.value)
   // 不要摘站点自己的 class（has-simple-ad-background-skin 之类）：那会把页面皮肤永久
   // 拆坏，退出阅读模式后背景图/配色就回不来了。皮肤只在阅读模式里用 CSS 压掉。
+  if (reading.value) {
+    scheduleUnseal()
+  } else {
+    removeReadHeader()
+  }
 }
 
 function toggleReading() {
@@ -298,9 +384,9 @@ body[blog-csdn-net].csdn-reading {
     box-shadow: none;
   }
 
+  // 文章头由我们自己渲染，站点那块（标题 + 作者信息条）整块不要了
   .article-header-box {
-    padding-bottom: 0;
-    border-bottom: 0;
+    display: none !important;
   }
 
   .article-title-box .title-article,
@@ -309,6 +395,43 @@ body[blog-csdn-net].csdn-reading {
     font-weight: 700;
     line-height: 1.4;
     margin: 0 0 14px;
+  }
+
+  // ---------- 自绘文章头 ----------
+  .csdn-read-head {
+    margin: 10px 0 30px;
+    padding-bottom: 18px;
+    border-bottom: 1px solid rgba(127, 127, 127, .25);
+
+    .csdn-read-title {
+      margin: 0 0 14px;
+      font-size: 34px;
+      font-weight: 800;
+      line-height: 1.34;
+      letter-spacing: .2px;
+      color: #1a1a1a;
+      word-break: break-word;
+    }
+
+    .csdn-read-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      align-items: center;
+      font-size: 13px;
+      line-height: 1.6;
+      color: #8b8b8b;
+
+      .csdn-read-dot {
+        color: #c4c4c4;
+      }
+    }
+  }
+
+  // 署名已经进文章头的话，正文开头那行就不重复显示
+  .csdn-read-head[data-absorbed-author="1"] ~ #content_views .csdn-author-line,
+  .csdn-read-head[data-absorbed-author="1"] ~ .markdown_views .csdn-author-line {
+    display: none !important;
   }
 
   // 正文里那个和页头重复的标题（通常是 h2）藏掉，标题只留页头那份
