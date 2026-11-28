@@ -30,9 +30,12 @@ export function safeFileName(name) {
     .slice(0, 80) || '未命名'
 }
 
-function toSeconds(duration) {
+function toSeconds(duration, { milliseconds = false } = {}) {
   const value = Number(duration) || 0
-  // 普通视频的 pages[].duration 是秒，番剧 epList[].duration 是毫秒，只能按量级猜。
+  if (milliseconds) return Math.round(value / 1000)
+  // 普通视频的 pages[].duration 是秒；个别接口给的是毫秒，只能按量级猜。
+  // 番剧的接口**一律是毫秒**，所以那边要显式传 milliseconds——44 秒的彩蛋/预告
+  // 折算成毫秒是 44000，按量级猜会当成 44000 秒（12:13:20）。
   return value > 24 * 3600 ? Math.round(value / 1000) : Math.round(value)
 }
 
@@ -153,7 +156,7 @@ function collectUgcItems(state) {
       aid: entry.aid,
       cid: entry.cid,
       page,
-      duration: toSeconds(entry.duration),
+      duration: toSeconds(entry.duration, { milliseconds: true }),
     }
   })
   return { title, items }
@@ -164,35 +167,82 @@ function bangumiEpisodeList(state) {
   return candidates.find(list => Array.isArray(list) && list.length) || []
 }
 
-async function fetchBangumiEpisodes(seasonId) {
-  const json = await requestJSON(`https://api.bilibili.com/pgc/view/web/ep/list?season_id=${seasonId}`)
-  return json.result?.episodes || []
-}
-
-async function collectBangumiItems(state) {
-  const seasonTitle = state?.mediaInfo?.title || state?.h1Title || document.title
-  const seasonId = state?.mediaInfo?.season_id
-    || pageWindow().__playinfo__?.result?.view_info?.report?.season_id
-  let list = bangumiEpisodeList(state).map(episode => ({
+function normalizeBangumiEpisode(episode) {
+  return {
     epId: episode.id || episode.ep_id,
     aid: episode.aid,
     bvid: episode.bvid,
     cid: episode.cid,
     title: episode.long_title || episode.share_copy || episode.title || '',
     duration: episode.duration,
-  }))
-  if (!list.length) {
-    if (!seasonId) throw new Error('拿不到这个番剧的剧集列表（season_id 不在页面上）')
-    list = (await fetchBangumiEpisodes(seasonId)).map(episode => ({
-      epId: episode.id || episode.ep_id,
-      aid: episode.aid,
-      bvid: episode.bvid,
-      cid: episode.cid,
-      title: episode.long_title || episode.share_copy || episode.title || '',
-      duration: episode.duration,
-    }))
   }
-  if (!list.length) throw new Error('这个番剧没有可下载的剧集')
+}
+
+function currentEpId() {
+  return Number(location.pathname.match(/\/bangumi\/play\/ep(\d+)/)?.[1]) || 0
+}
+
+function currentSeasonIdFromUrl() {
+  return Number(location.pathname.match(/\/bangumi\/play\/ss(\d+)/)?.[1]) || 0
+}
+
+// 新版番剧播放页是 Next.js 那套（`__NEXT_DATA__` + `PlayerEpisodePanel_*`），
+// **不再提供 `__INITIAL_STATE__`**，所以季信息得从别处找。
+function findDeep(value, key, depth = 0) {
+  if (!value || typeof value !== 'object' || depth > 8) return undefined
+  if (Object.prototype.hasOwnProperty.call(value, key)) return value[key]
+  for (const child of Object.values(value)) {
+    const found = findDeep(child, key, depth + 1)
+    if (found !== undefined) return found
+  }
+  return undefined
+}
+
+function bangumiSeasonId(state) {
+  return state?.mediaInfo?.season_id
+    || pageWindow().__playinfo__?.result?.view_info?.report?.season_id
+    || currentSeasonIdFromUrl()
+    || findDeep(pageWindow().__NEXT_DATA__, 'season_id')
+    || 0
+}
+
+async function fetchBangumiEpisodes(seasonId) {
+  const json = await requestJSON(`https://api.bilibili.com/pgc/view/web/ep/list?season_id=${seasonId}`)
+  return json.result?.episodes || []
+}
+
+// 按 ep_id 取整季：**不依赖页面上的任何状态**，新版老版页都能用，
+// 顺手还能拿到季名（新版页面拿不到 mediaInfo 的标题）。
+async function fetchBangumiSeasonByEp(epId) {
+  const json = await requestJSON(`https://api.bilibili.com/pgc/view/web/season?ep_id=${epId}`)
+  return {
+    seasonId: json.result?.season_id || 0,
+    title: json.result?.title || '',
+    episodes: json.result?.episodes || [],
+  }
+}
+
+async function collectBangumiItems(state) {
+  let seasonTitle = state?.mediaInfo?.title || state?.h1Title || ''
+  let list = bangumiEpisodeList(state).map(normalizeBangumiEpisode)
+
+  if (!list.length) {
+    // 1) 优先按 ep_id 要整季——新版播放页根本没状态，但这条路一直在
+    const epId = currentEpId()
+    if (epId) {
+      const season = await fetchBangumiSeasonByEp(epId)
+      list = season.episodes.map(normalizeBangumiEpisode)
+      seasonTitle = seasonTitle || season.title
+    }
+    // 2) 只有 ss 号（/bangumi/play/ss123）时按 season_id 要
+    if (!list.length) {
+      const seasonId = bangumiSeasonId(state)
+      if (seasonId) list = (await fetchBangumiEpisodes(seasonId)).map(normalizeBangumiEpisode)
+    }
+  }
+
+  if (!list.length) throw new Error('拿不到这个番剧的剧集列表（ep_id 和 season_id 都没取到）')
+  seasonTitle = seasonTitle || document.title
   const items = list.map((entry, index) => {
     // 标题本身就带着"第 N 话"，别再加一层编号（序号在表格的 # 列里）；前缀也用它本身。
     const picked = pickName([entry.title], `${seasonTitle}_${String(index + 1).padStart(2, '0')}`)
@@ -207,7 +257,7 @@ async function collectBangumiItems(state) {
       aid: entry.aid,
       cid: entry.cid,
       page: index + 1,
-      duration: toSeconds(entry.duration),
+      duration: toSeconds(entry.duration, { milliseconds: true }),
     }
   })
   return { title: seasonTitle, items }
